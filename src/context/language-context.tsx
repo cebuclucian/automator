@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 
-// Define the available languages - updated to include all 10 languages
-type Language = 'ro' | 'en' | 'fr' | 'de' | 'es' | 'it' | 'pt' | 'nl' | 'sv' | 'da';
+// Define the available languages - only Romanian and English for UI
+type Language = 'ro' | 'en';
 
 // Translation map - expanded for new system and all pages
 const translations = {
@@ -378,14 +378,6 @@ const translations = {
     // Languages
     'languages.ro': 'Română',
     'languages.en': 'English',
-    'languages.fr': 'Français',
-    'languages.de': 'Deutsch',
-    'languages.es': 'Español',
-    'languages.it': 'Italiano',
-    'languages.pt': 'Português',
-    'languages.nl': 'Nederlands',
-    'languages.sv': 'Svenska',
-    'languages.da': 'Dansk',
   },
   en: {
     // Common
@@ -760,14 +752,6 @@ const translations = {
     // Languages
     'languages.ro': 'Română',
     'languages.en': 'English',
-    'languages.fr': 'Français',
-    'languages.de': 'Deutsch',
-    'languages.es': 'Español',
-    'languages.it': 'Italiano',
-    'languages.pt': 'Português',
-    'languages.nl': 'Nederlands',
-    'languages.sv': 'Svenska',
-    'languages.da': 'Dansk',
   }
 };
 
@@ -783,7 +767,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   // Get initial language from local storage or default to Romanian
   const [language, setLanguageState] = useState<Language>(() => {
     const savedLanguage = localStorage.getItem('language');
-    return (savedLanguage && ['ro', 'en', 'fr', 'de', 'es', 'it', 'pt', 'nl', 'sv', 'da'].includes(savedLanguage) 
+    return (savedLanguage && ['ro', 'en'].includes(savedLanguage) 
       ? savedLanguage as Language 
       : 'ro');
   });
