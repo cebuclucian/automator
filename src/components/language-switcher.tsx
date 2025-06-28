@@ -12,14 +12,6 @@ import { Globe } from 'lucide-react';
 const languageOptions = [
   { value: 'ro', label: 'Română', flag: '🇷🇴' },
   { value: 'en', label: 'English', flag: '🇬🇧' },
-  { value: 'fr', label: 'Français', flag: '🇫🇷' },
-  { value: 'de', label: 'Deutsch', flag: '🇩🇪' },
-  { value: 'es', label: 'Español', flag: '🇪🇸' },
-  { value: 'it', label: 'Italiano', flag: '🇮🇹' },
-  { value: 'pt', label: 'Português', flag: '🇵🇹' },
-  { value: 'nl', label: 'Nederlands', flag: '🇳🇱' },
-  { value: 'sv', label: 'Svenska', flag: '🇸🇪' },
-  { value: 'da', label: 'Dansk', flag: '🇩🇰' },
 ];
 
 export default function LanguageSwitcher({ className }: { className?: string }) {
