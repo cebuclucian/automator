@@ -155,6 +155,12 @@ Deno.serve(async (req) => {
       storagePath: material.storage_path
     });
 
+    // Check if download URL exists
+    if (!material.downloadUrl) {
+      console.error('No download URL available for material');
+      return createErrorResponse('Download URL not available', 404);
+    }
+
     // Check if download has expired
     if (material.downloadExpiry) {
       const expiryDate = new Date(material.downloadExpiry);
@@ -171,108 +177,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Try to use the signed URL first if available
-    if (material.downloadUrl) {
-      console.log('Using existing signed URL for download');
-      try {
-        const response = await fetch(material.downloadUrl);
-        if (response.ok) {
-          console.log('Signed URL fetch successful, redirecting');
-          return Response.redirect(material.downloadUrl, 302);
-        } else {
-          console.warn('Signed URL fetch failed:', response.status, response.statusText);
-        }
-      } catch (fetchError) {
-        console.warn('Signed URL fetch error:', fetchError);
-      }
-    }
-
-    // Fallback to direct storage access
-    console.log('Attempting direct storage access...');
-    
-    // Try different possible file paths
-    const possiblePaths = [
-      material.storage_path,
-      `${jobId}/${material.type}_${material.id}.${material.format}`,
-      `${jobId}/${material.name}.${material.format}`,
-      `${jobId}/${material.id}.${material.format}`
-    ].filter(Boolean);
-
-    console.log('Trying storage paths:', possiblePaths);
-
-    let fileData = null;
-    let successfulPath = null;
-
-    for (const filePath of possiblePaths) {
-      try {
-        console.log(`Attempting to download from path: ${filePath}`);
-        const { data, error } = await supabaseAdmin.storage
-          .from('course-materials')
-          .download(filePath);
-
-        if (!error && data) {
-          fileData = data;
-          successfulPath = filePath;
-          console.log(`Successfully downloaded from path: ${filePath}`);
-          break;
-        } else if (error) {
-          console.log(`Path ${filePath} failed:`, error.message);
-        }
-      } catch (pathError) {
-        console.log(`Path ${filePath} exception:`, pathError);
-      }
-    }
-
-    if (!fileData || !successfulPath) {
-      console.error('File not found in any storage path');
-      return createErrorResponse('File not found in storage', 404);
-    }
-
-    // Determine content type based on format
-    let contentType = 'application/octet-stream';
-    
-    switch (material.format.toLowerCase()) {
-      case 'docx':
-        contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-        break;
-      case 'pptx':
-        contentType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
-        break;
-      case 'pdf':
-        contentType = 'application/pdf';
-        break;
-      case 'txt':
-        contentType = 'text/plain';
-        break;
-    }
-
-    // Create filename
-    const sanitizedName = material.name.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '_');
-    const filename = `${sanitizedName}.${material.format}`;
-
-    console.log('Preparing file response:', {
-      contentType,
-      filename,
-      fileSize: fileData.size
-    });
-
-    // Convert blob to array buffer
-    const arrayBuffer = await fileData.arrayBuffer();
-
-    console.log('File download successful, sending response');
-
-    // Return the file content
-    return new Response(arrayBuffer, {
-      status: 200,
-      headers: {
-        ...corsHeaders,
-        'Content-Type': contentType,
-        'Content-Disposition': `attachment; filename="${filename}"`,
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-      },
-    });
+    // Redirect to the pre-signed URL
+    console.log('Redirecting to pre-signed URL');
+    return Response.redirect(material.downloadUrl, 302);
 
   } catch (error) {
     console.error('Unexpected error in download-material function:', error);
