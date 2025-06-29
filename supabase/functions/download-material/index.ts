@@ -8,7 +8,7 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
 };
 
-// Helper function to create error responses
+// Helper function to create error responses with consistent CORS headers
 function createErrorResponse(message: string, status: number = 500) {
   console.error(`Error Response (${status}):`, message);
   return new Response(
@@ -100,13 +100,12 @@ Deno.serve(async (req) => {
       return createErrorResponse('Missing jobId or materialId parameters', 400);
     }
 
-    // Verify job ownership
+    // Verify job ownership first - explicit ownership check
     console.log('Verifying job ownership...');
     const { data: job, error: jobError } = await supabaseAdmin
       .from('jobs')
       .select('id, userId, status')
       .eq('id', jobId)
-      .eq('userId', user.id)
       .single();
 
     if (jobError) {
@@ -115,11 +114,20 @@ Deno.serve(async (req) => {
     }
 
     if (!job) {
-      console.error('Job not found or access denied');
-      return createErrorResponse('Job not found or access denied', 404);
+      console.error('Job not found');
+      return createErrorResponse('Job not found', 404);
     }
 
-    console.log('Job verified:', { jobId: job.id, status: job.status });
+    // Explicit ownership verification
+    if (job.userId !== user.id) {
+      console.error('Access denied: User does not own this job', {
+        jobUserId: job.userId,
+        requestUserId: user.id
+      });
+      return createErrorResponse('Access denied: You do not have permission to access this job', 403);
+    }
+
+    console.log('Job ownership verified:', { jobId: job.id, status: job.status });
 
     // Check if job is completed
     if (job.status !== 'completed') {
