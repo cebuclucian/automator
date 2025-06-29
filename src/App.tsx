@@ -28,7 +28,6 @@ import CourseEditPage from '@/pages/course-edit';
 
 // Account Pages
 import SettingsPage from '@/pages/settings';
-import SubscriptionPage from '@/pages/subscription';
 import BillingPage from '@/pages/billing';
 
 // Progress and Materials
@@ -107,12 +106,6 @@ function App() {
                 <Route path="/settings" element={
                   <PrivateRoute>
                     <SettingsPage />
-                  </PrivateRoute>
-                } />
-                
-                <Route path="/abonament" element={
-                  <PrivateRoute>
-                    <SubscriptionPage />
                   </PrivateRoute>
                 } />
                 
