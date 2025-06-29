@@ -47,7 +47,7 @@ export default function PricingPage() {
     <div className="flex flex-col min-h-screen">
       <SiteHeader />
       
-      <main className="flex-1 container py-8 max-w-6xl">
+      <main className="flex-1 container py-8">
         <div className="mb-8">
           <Button variant="ghost" size="sm" asChild className="mb-4">
             <Link to="/">
@@ -65,7 +65,7 @@ export default function PricingPage() {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 max-w-6xl mx-auto">
           {stripeProducts.map((product, index) => (
             <Card 
               key={product.id} 
@@ -223,7 +223,7 @@ export default function PricingPage() {
 
         {/* Contact Section */}
         <section className="text-center">
-          <Card>
+          <Card className="max-w-2xl mx-auto">
             <CardContent className="pt-6">
               <h2 className="text-xl font-bold mb-4">{t('pricing.contact.title')}</h2>
               <p className="text-muted-foreground mb-6">

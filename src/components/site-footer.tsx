@@ -7,8 +7,8 @@ export default function SiteFooter() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="w-full py-6 md:py-10 border-t">
-      <div className="container flex flex-col gap-8">
+    <footer className="w-full border-t bg-background">
+      <div className="container flex flex-col gap-8 py-10 md:py-12">
         <div className="flex flex-col md:flex-row gap-8 justify-between">
           <div className="space-y-4">
             <Link to="/" className="flex items-center gap-2">
@@ -68,12 +68,12 @@ export default function SiteFooter() {
               <h4 className="text-sm font-medium">{t('auth.signIn')}</h4>
               <ul className="space-y-2">
                 <li>
-                  <Link to="/auth/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                     {t('auth.signIn')}
                   </Link>
                 </li>
                 <li>
-                  <Link to="/auth/register" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  <Link to="/register" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                     {t('auth.signUp')}
                   </Link>
                 </li>
@@ -88,10 +88,10 @@ export default function SiteFooter() {
           </p>
           
           <div className="flex gap-4">
-            <Link to="/legal/terms" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <Link to="/termeni" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               {t('landing.footer.terms')}
             </Link>
-            <Link to="/legal/privacy" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <Link to="/confidentialitate" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               {t('landing.footer.privacy')}
             </Link>
           </div>
