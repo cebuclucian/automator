@@ -53,15 +53,12 @@ export interface Database {
           updatedAt: string;
           completedAt: string | null;
           progressPercent: number;
-          milestone: string | null;
           statusMessage: string | null;
           error: string | null;
           metadata: Json;
           currentStep: number | null;
           totalSteps: number | null;
-          currentMaterial: string | null;
-          downloadUrl: string | null;
-          downloadExpiry: string | null;
+          stepName: string | null;
         };
         Insert: {
           id?: string;
@@ -71,15 +68,12 @@ export interface Database {
           updatedAt?: string;
           completedAt?: string | null;
           progressPercent?: number;
-          milestone?: string | null;
           statusMessage?: string | null;
           error?: string | null;
           metadata?: Json;
           currentStep?: number | null;
           totalSteps?: number | null;
-          currentMaterial?: string | null;
-          downloadUrl?: string | null;
-          downloadExpiry?: string | null;
+          stepName?: string | null;
         };
         Update: {
           id?: string;
@@ -89,15 +83,12 @@ export interface Database {
           updatedAt?: string;
           completedAt?: string | null;
           progressPercent?: number;
-          milestone?: string | null;
           statusMessage?: string | null;
           error?: string | null;
           metadata?: Json;
           currentStep?: number | null;
           totalSteps?: number | null;
-          currentMaterial?: string | null;
-          downloadUrl?: string | null;
-          downloadExpiry?: string | null;
+          stepName?: string | null;
         };
       };
       materials: {
@@ -111,6 +102,7 @@ export interface Database {
           format: string;
           downloadUrl: string | null;
           downloadExpiry: string | null;
+          stepNumber: number;
         };
         Insert: {
           id?: string;
@@ -122,6 +114,7 @@ export interface Database {
           format: string;
           downloadUrl?: string | null;
           downloadExpiry?: string | null;
+          stepNumber?: number;
         };
         Update: {
           id?: string;
@@ -133,6 +126,7 @@ export interface Database {
           format?: string;
           downloadUrl?: string | null;
           downloadExpiry?: string | null;
+          stepNumber?: number;
         };
       };
     };

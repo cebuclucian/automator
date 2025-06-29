@@ -1,7 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from '@/context/language-context';
 import { useJob } from '@/context/job-context';
+import { useAuth } from '@/context/auth-context';
+import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ro, enUS } from 'date-fns/locale';
 import { useLanguage } from '@/context/language-context';
@@ -15,9 +17,8 @@ import {
   CardTitle 
 } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { ArrowLeft, Download, File, FileDown, FileText, FileType, FileType as FileTypography, RefreshCw, Timer as Time, Timer } from 'lucide-react';
+import { ArrowLeft, Download, FileText, RefreshCw, Timer, Loader2 } from 'lucide-react';
 import SiteHeader from '@/components/site-header';
 import SiteFooter from '@/components/site-footer';
 import { Database } from '@/types/supabase';
@@ -29,7 +30,10 @@ export default function MaterialsPage() {
   const { jobId } = useParams<{ jobId: string }>();
   const t = useTranslation();
   const { fetchJob, fetchMaterials, currentJob, materials, loadingMaterials } = useJob();
+  const { session } = useAuth();
   const { language } = useLanguage();
+  const { toast } = useToast();
+  const [downloadingMaterials, setDownloadingMaterials] = useState<Set<string>>(new Set());
   
   // Date formatting locale
   const locale = language === 'ro' ? ro : enUS;
@@ -53,11 +57,11 @@ export default function MaterialsPage() {
       case 'docx':
         return <FileText className="h-5 w-5 text-blue-600" />;
       case 'pptx':
-        return <FileTypography className="h-5 w-5 text-orange-600" />;
+        return <FileText className="h-5 w-5 text-orange-600" />;
       case 'pdf':
-        return <File className="h-5 w-5 text-red-600" />;
+        return <FileText className="h-5 w-5 text-red-600" />;
       default:
-        return <FileType className="h-5 w-5 text-gray-600" />;
+        return <FileText className="h-5 w-5 text-gray-600" />;
     }
   };
 
@@ -70,6 +74,69 @@ export default function MaterialsPage() {
     const hoursDiff = (expiry.getTime() - now.getTime()) / (1000 * 3600);
     
     return hoursDiff <= 24;
+  };
+
+  // Handle material download
+  const handleDownload = async (material: Material) => {
+    if (!session?.access_token || !material.downloadUrl) {
+      toast({
+        title: t('common.error'),
+        description: 'Nu se poate descărca materialul în acest moment',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setDownloadingMaterials(prev => new Set(prev).add(material.id));
+
+    try {
+      const response = await fetch(material.downloadUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // Create blob from response
+      const blob = await response.blob();
+      
+      // Create download URL
+      const downloadUrl = window.URL.createObjectURL(blob);
+      
+      // Create temporary link and trigger download
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `${material.name}.${material.format}`;
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+      
+      toast({
+        title: t('common.success'),
+        description: `${material.name} a fost descărcat cu succes`,
+      });
+      
+    } catch (error) {
+      console.error('Download error:', error);
+      toast({
+        title: t('common.error'),
+        description: 'Eroare la descărcarea materialului. Încercați din nou.',
+        variant: 'destructive',
+      });
+    } finally {
+      setDownloadingMaterials(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(material.id);
+        return newSet;
+      });
+    }
   };
 
   if (!currentJob) {
@@ -130,29 +197,20 @@ export default function MaterialsPage() {
                 {courseName}
               </p>
             </div>
-            
-            {currentJob.downloadUrl && (
-              <Button asChild>
-                <a href={currentJob.downloadUrl} target="_blank" rel="noopener noreferrer">
-                  <FileDown className="mr-2 h-4 w-4" />
-                  {t('materials.downloadAll')}
-                </a>
-              </Button>
-            )}
           </div>
         </div>
         
         {/* Download expiry warning */}
-        {currentJob.downloadExpiry && (
-          <Alert variant={isExpiringSoon(currentJob.downloadExpiry) ? "destructive" : "default"} className="mb-6">
+        {materials.length > 0 && materials[0]?.downloadExpiry && (
+          <Alert variant={isExpiringSoon(materials[0].downloadExpiry) ? "destructive" : "default"} className="mb-6">
             <Timer className="h-4 w-4" />
             <AlertTitle>
-              {isExpiringSoon(currentJob.downloadExpiry) 
+              {isExpiringSoon(materials[0].downloadExpiry) 
                 ? t('materials.expiryWarning') 
                 : t('materials.expiryNote')}
             </AlertTitle>
             <AlertDescription>
-              {t('materials.expiryDate')}: {formatDate(currentJob.downloadExpiry)}
+              {t('materials.expiryDate')}: {formatDate(materials[0].downloadExpiry)}
             </AlertDescription>
           </Alert>
         )}
@@ -166,48 +224,63 @@ export default function MaterialsPage() {
           </div>
         ) : materials.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {materials.map((material) => (
-              <Card key={material.id}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2">
-                      {getFileIcon(material.format)}
-                      <CardTitle className="text-lg">{material.name}</CardTitle>
+            {materials
+              .sort((a, b) => a.stepNumber - b.stepNumber)
+              .map((material) => (
+                <Card key={material.id}>
+                  <CardHeader className="pb-2">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2">
+                        {getFileIcon(material.format)}
+                        <CardTitle className="text-lg">{material.name}</CardTitle>
+                      </div>
+                      <div className="text-xs uppercase font-medium text-muted-foreground">
+                        {material.format}
+                      </div>
                     </div>
-                    <div className="text-xs uppercase font-medium text-muted-foreground">
-                      {material.format}
-                    </div>
-                  </div>
-                  <CardDescription>
-                    {t(`materials.types.${material.type}`)}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {material.type === 'agenda' 
-                      ? t('materials.courseAgenda') 
-                      : material.type === 'slides' 
-                      ? t('materials.presentationSlides')
-                      : t('materials.courseMaterial')}
-                  </p>
-                </CardContent>
-                <CardFooter>
-                  {material.downloadUrl ? (
-                    <Button asChild variant="secondary" size="sm" className="w-full">
-                      <a href={material.downloadUrl} target="_blank" rel="noopener noreferrer">
-                        <Download className="mr-2 h-4 w-4" />
-                        {t('materials.download')}
-                      </a>
-                    </Button>
-                  ) : (
-                    <Button disabled variant="outline" size="sm" className="w-full">
-                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                      {t('materials.preparing')}
-                    </Button>
-                  )}
-                </CardFooter>
-              </Card>
-            ))}
+                    <CardDescription>
+                      {t(`materials.types.${material.type}`)}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {material.type === 'foundation' 
+                        ? t('materials.courseAgenda') 
+                        : material.type === 'slides' 
+                        ? t('materials.presentationSlides')
+                        : t('materials.courseMaterial')}
+                    </p>
+                  </CardContent>
+                  <CardFooter>
+                    {material.downloadUrl ? (
+                      <Button 
+                        onClick={() => handleDownload(material)}
+                        disabled={downloadingMaterials.has(material.id)}
+                        variant="secondary" 
+                        size="sm" 
+                        className="w-full"
+                      >
+                        {downloadingMaterials.has(material.id) ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Se descarcă...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="mr-2 h-4 w-4" />
+                            {t('materials.download')}
+                          </>
+                        )}
+                      </Button>
+                    ) : (
+                      <Button disabled variant="outline" size="sm" className="w-full">
+                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                        {t('materials.preparing')}
+                      </Button>
+                    )}
+                  </CardFooter>
+                </Card>
+              ))}
           </div>
         ) : (
           <Card>

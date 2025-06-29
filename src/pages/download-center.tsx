@@ -1,7 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from '@/context/language-context';
 import { useJob } from '@/context/job-context';
+import { useAuth } from '@/context/auth-context';
+import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ro, enUS } from 'date-fns/locale';
 import { useLanguage } from '@/context/language-context';
@@ -20,12 +22,10 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { 
   ArrowLeft, 
   Download, 
-  FileDown, 
   FileText, 
-  Package, 
-  Timer,
   CheckCircle,
-  AlertTriangle
+  AlertTriangle,
+  Loader2
 } from 'lucide-react';
 import SiteHeader from '@/components/site-header';
 import SiteFooter from '@/components/site-footer';
@@ -34,7 +34,10 @@ export default function DownloadCenterPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const t = useTranslation();
   const { fetchJob, fetchMaterials, currentJob, materials, loadingMaterials } = useJob();
+  const { session } = useAuth();
   const { language } = useLanguage();
+  const { toast } = useToast();
+  const [downloadingMaterials, setDownloadingMaterials] = useState<Set<string>>(new Set());
   
   // Date formatting locale
   const locale = language === 'ro' ? ro : enUS;
@@ -74,6 +77,69 @@ export default function DownloadCenterPage() {
         return <FileText className="h-5 w-5 text-red-600" />;
       default:
         return <FileText className="h-5 w-5 text-gray-600" />;
+    }
+  };
+
+  // Handle material download
+  const handleDownload = async (material: any) => {
+    if (!session?.access_token || !material.downloadUrl) {
+      toast({
+        title: t('common.error'),
+        description: 'Nu se poate descărca materialul în acest moment',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setDownloadingMaterials(prev => new Set(prev).add(material.id));
+
+    try {
+      const response = await fetch(material.downloadUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // Create blob from response
+      const blob = await response.blob();
+      
+      // Create download URL
+      const downloadUrl = window.URL.createObjectURL(blob);
+      
+      // Create temporary link and trigger download
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `${material.name}.${material.format}`;
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+      
+      toast({
+        title: t('common.success'),
+        description: `${material.name} a fost descărcat cu succes`,
+      });
+      
+    } catch (error) {
+      console.error('Download error:', error);
+      toast({
+        title: t('common.error'),
+        description: 'Eroare la descărcarea materialului. Încercați din nou.',
+        variant: 'destructive',
+      });
+    } finally {
+      setDownloadingMaterials(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(material.id);
+        return newSet;
+      });
     }
   };
 
@@ -135,38 +201,29 @@ export default function DownloadCenterPage() {
                 {courseName}
               </p>
             </div>
-            
-            {currentJob.downloadUrl && (
-              <Button asChild size="lg">
-                <a href={currentJob.downloadUrl} target="_blank" rel="noopener noreferrer">
-                  <Package className="mr-2 h-5 w-5" />
-                  Descarcă tot (ZIP)
-                </a>
-              </Button>
-            )}
           </div>
         </div>
         
         {/* Download Status */}
-        {currentJob.status === 'completed' && currentJob.downloadExpiry && (
+        {currentJob.status === 'completed' && materials.length > 0 && materials[0]?.downloadExpiry && (
           <Alert 
-            variant={isExpiringSoon(currentJob.downloadExpiry) ? "destructive" : "default"} 
+            variant={isExpiringSoon(materials[0].downloadExpiry) ? "destructive" : "default"} 
             className="mb-6"
           >
-            {isExpiringSoon(currentJob.downloadExpiry) ? (
+            {isExpiringSoon(materials[0].downloadExpiry) ? (
               <AlertTriangle className="h-4 w-4" />
             ) : (
-              <Timer className="h-4 w-4" />
+              <CheckCircle className="h-4 w-4" />
             )}
             <AlertTitle>
-              {isExpiringSoon(currentJob.downloadExpiry) 
+              {isExpiringSoon(materials[0].downloadExpiry) 
                 ? 'Atenție! Link-urile expiră în curând' 
                 : 'Informații despre descărcare'}
             </AlertTitle>
             <AlertDescription>
-              Link-urile de descărcare expiră pe: {formatDate(currentJob.downloadExpiry)}
+              Link-urile de descărcare expiră pe: {formatDate(materials[0].downloadExpiry)}
               <br />
-              {isExpiringSoon(currentJob.downloadExpiry) 
+              {isExpiringSoon(materials[0].downloadExpiry) 
                 ? 'Te rugăm să descarci materialele cât mai curând posibil.'
                 : 'Ai timp suficient să descarci toate materialele.'}
             </AlertDescription>
@@ -270,15 +327,26 @@ export default function DownloadCenterPage() {
                   </CardContent>
                   <CardFooter>
                     {material.downloadUrl ? (
-                      <Button asChild className="w-full">
-                        <a href={material.downloadUrl} target="_blank" rel="noopener noreferrer">
-                          <Download className="mr-2 h-4 w-4" />
-                          Descarcă
-                        </a>
+                      <Button 
+                        onClick={() => handleDownload(material)}
+                        disabled={downloadingMaterials.has(material.id)}
+                        className="w-full"
+                      >
+                        {downloadingMaterials.has(material.id) ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Se descarcă...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="mr-2 h-4 w-4" />
+                            Descarcă
+                          </>
+                        )}
                       </Button>
                     ) : (
                       <Button disabled variant="outline" className="w-full">
-                        <FileDown className="mr-2 h-4 w-4" />
+                        <FileText className="mr-2 h-4 w-4" />
                         Se pregătește...
                       </Button>
                     )}
@@ -315,7 +383,7 @@ export default function DownloadCenterPage() {
             <div>
               <h4 className="font-medium mb-2">Cum să descarc materialele?</h4>
               <p className="text-sm text-muted-foreground">
-                Poți descărca fiecare material individual sau toate materialele într-un singur fișier ZIP folosind butonul "Descarcă tot".
+                Poți descărca fiecare material individual folosind butonul "Descarcă" de lângă fiecare material.
               </p>
             </div>
             

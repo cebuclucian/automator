@@ -397,7 +397,7 @@ async function generateDownloadUrls(jobId: string) {
     expiryDate.setHours(expiryDate.getHours() + 72);
     const expiryIso = expiryDate.toISOString();
     
-    // Update materials with fake download URLs
+    // Update materials with download URLs pointing to the new download function
     const { data: materials, error: fetchError } = await supabaseAdmin
       .from("materials")
       .select("id, type, stepNumber")
@@ -405,12 +405,14 @@ async function generateDownloadUrls(jobId: string) {
     
     if (fetchError) throw fetchError;
     
-    // Update each material with a fake download URL
+    // Update each material with a download URL pointing to our new function
     for (const material of materials) {
+      const downloadUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/download-material?jobId=${jobId}&materialId=${material.id}`;
+      
       const { error } = await supabaseAdmin
         .from("materials")
         .update({
-          downloadUrl: `https://automator.ro/api/download/${jobId}/${material.id}`,
+          downloadUrl,
           downloadExpiry: expiryIso
         })
         .eq("id", material.id);
@@ -418,16 +420,8 @@ async function generateDownloadUrls(jobId: string) {
       if (error) throw error;
     }
     
-    // Create a fake "download all" URL for the job
-    const { error } = await supabaseAdmin
-      .from("jobs")
-      .update({
-        downloadUrl: `https://automator.ro/api/download-all/${jobId}`,
-        downloadExpiry: expiryIso
-      })
-      .eq("id", jobId);
-    
-    if (error) throw error;
+    // Note: We're not setting downloadUrl on the job itself anymore
+    // since we don't support "download all" functionality yet
     
   } catch (error) {
     console.error("Error generating download URLs:", error);
