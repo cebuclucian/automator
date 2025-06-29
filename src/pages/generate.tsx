@@ -67,14 +67,15 @@ const languageOptions = [
 export default function GeneratePage() {
   const t = useTranslation();
   const { createJob } = useJob();
-  const { canGenerate, generationsRemaining, subscription } = useSubscription();
+  const { subscription, generationsRemaining, loading: loadingSubscription } = useSubscription();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Default form values
+  // Default form values - Fixed: Added empty string for subject to prevent uncontrolled input warning
   const defaultValues: Partial<GenerateFormValues> = {
     language: 'ro',
+    subject: '', // Fixed: Initialize with empty string instead of undefined
     level: 'intermediate',
     audience: 'professionals',
     duration: '2h',
@@ -85,6 +86,9 @@ export default function GeneratePage() {
     resolver: zodResolver(generateSchema),
     defaultValues,
   });
+
+  // Check if user can generate - improved logic
+  const canGenerate = !loadingSubscription && (generationsRemaining > 0);
 
   const onSubmit = async (data: GenerateFormValues) => {
     if (!canGenerate) {
@@ -132,7 +136,7 @@ export default function GeneratePage() {
           </p>
         </div>
         
-        {generationsRemaining <= 0 && (
+        {!loadingSubscription && generationsRemaining <= 0 && (
           <Alert variant="destructive" className="mb-6">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>{t('generate.error.noGenerationsLeft')}</AlertTitle>
@@ -347,11 +351,17 @@ export default function GeneratePage() {
                   <FileText className="h-4 w-4" />
                   <AlertTitle>{t('generate.info.remaining')}</AlertTitle>
                   <AlertDescription>
-                    {t('generate.info.youHave')} <strong>{generationsRemaining}</strong> {t('generate.info.generationsLeft')}
+                    {loadingSubscription ? (
+                      'Se încarcă...'
+                    ) : (
+                      <>
+                        {t('generate.info.youHave')} <strong>{generationsRemaining}</strong> {t('generate.info.generationsLeft')}
+                      </>
+                    )}
                   </AlertDescription>
                 </Alert>
                 
-                <Button type="submit" className="w-full" disabled={isSubmitting || generationsRemaining <= 0}>
+                <Button type="submit" className="w-full" disabled={isSubmitting || !canGenerate || loadingSubscription}>
                   {isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
