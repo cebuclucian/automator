@@ -4,6 +4,7 @@ import { useTranslation } from '@/context/language-context';
 import { Button } from '@/components/ui/button';
 import { ModeToggle } from '@/components/mode-toggle';
 import LanguageSwitcher from '@/components/language-switcher';
+import { SubscriptionStatus } from '@/components/subscription-status';
 import { BookCheck, MenuIcon } from 'lucide-react';
 import { 
   DropdownMenu,
@@ -119,70 +120,73 @@ export default function SiteHeader() {
             
             {/* User Authentication */}
             {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="rounded-full hover:bg-muted/50 transition-colors h-8 w-8 sm:h-10 sm:w-10"
-                  >
-                    <Avatar className="h-6 w-6 sm:h-8 sm:w-8">
-                      <AvatarFallback className="bg-primary/10 text-primary font-medium text-xs sm:text-sm">
-                        {user.email?.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                    {user.email}
-                  </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to="/dashboard" className="cursor-pointer">
-                      {t('dashboard.title')}
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/genereaza-curs" className="cursor-pointer">
-                      {t('generate.title')}
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/cursuri" className="cursor-pointer">
-                      {t('nav.courses')}
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to="/settings" className="cursor-pointer">
-                      {t('nav.profile')}
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/abonament" className="cursor-pointer">
-                      {t('nav.subscription')}
-                    </Link>
-                  </DropdownMenuItem>
-                  {user.email === 'admin@automator.ro' && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem asChild>
-                        <Link to="/admin" className="cursor-pointer">
-                          {t('nav.admin')}
-                        </Link>
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem 
-                    onClick={() => signOut()}
-                    className="cursor-pointer text-red-600 focus:text-red-600"
-                  >
-                    {t('auth.signOut')}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="flex items-center gap-2">
+                <SubscriptionStatus />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="rounded-full hover:bg-muted/50 transition-colors h-8 w-8 sm:h-10 sm:w-10"
+                    >
+                      <Avatar className="h-6 w-6 sm:h-8 sm:w-8">
+                        <AvatarFallback className="bg-primary/10 text-primary font-medium text-xs sm:text-sm">
+                          {user.email?.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                      {user.email}
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/dashboard" className="cursor-pointer">
+                        {t('dashboard.title')}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/genereaza-curs" className="cursor-pointer">
+                        {t('generate.title')}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/cursuri" className="cursor-pointer">
+                        {t('nav.courses')}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/settings" className="cursor-pointer">
+                        {t('nav.profile')}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/abonament" className="cursor-pointer">
+                        {t('nav.subscription')}
+                      </Link>
+                    </DropdownMenuItem>
+                    {user.email === 'admin@automator.ro' && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                          <Link to="/admin" className="cursor-pointer">
+                            {t('nav.admin')}
+                          </Link>
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      onClick={() => signOut()}
+                      className="cursor-pointer text-red-600 focus:text-red-600"
+                    >
+                      {t('auth.signOut')}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             ) : (
               <div className="flex items-center gap-1 sm:gap-2">
                 <Button 

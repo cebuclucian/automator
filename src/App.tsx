@@ -4,7 +4,6 @@ import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/context/auth-context';
 import { JobProvider } from '@/context/job-context';
 import { LanguageProvider } from '@/context/language-context';
-import { SubscriptionProvider } from './context/subscription-context';
 import PrivateRoute from '@/components/private-route';
 import AdminRoute from '@/components/admin-route';
 
@@ -13,6 +12,7 @@ import HomePage from '@/pages/home';
 import AboutPage from '@/pages/about';
 import PricingPage from '@/pages/pricing';
 import ContactPage from '@/pages/contact';
+import SuccessPage from '@/pages/success';
 
 // Auth Pages
 import LoginPage from '@/pages/login';
@@ -51,126 +51,131 @@ function App() {
     <ThemeProvider>
       <LanguageProvider>
         <AuthProvider>
-          <SubscriptionProvider>
-            <JobProvider>
-              <Router>
-                <Routes>
-                  {/* Public Pages */}
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/despre" element={<AboutPage />} />
-                  <Route path="/preturi" element={<PricingPage />} />
-                  <Route path="/contact" element={<ContactPage />} />
-                  
-                  {/* Auth Pages */}
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/register" element={<RegisterPage />} />
-                  <Route path="/reset-password" element={<ResetPasswordPage />} />
-                  
-                  {/* Dashboard Pages */}
-                  <Route path="/dashboard" element={
-                    <PrivateRoute>
-                      <DashboardPage />
-                    </PrivateRoute>
-                  } />
-                  
-                  <Route path="/genereaza-curs" element={
-                    <PrivateRoute>
-                      <GeneratePage />
-                    </PrivateRoute>
-                  } />
-                  
-                  <Route path="/cursuri" element={
-                    <PrivateRoute>
-                      <CoursesPage />
-                    </PrivateRoute>
-                  } />
-                  
-                  <Route path="/curs/:id" element={
-                    <PrivateRoute>
-                      <CourseViewPage />
-                    </PrivateRoute>
-                  } />
-                  
-                  <Route path="/curs/:id/edit" element={
-                    <PrivateRoute>
-                      <CourseEditPage />
-                    </PrivateRoute>
-                  } />
-                  
-                  {/* Account Management */}
-                  <Route path="/profil" element={
-                    <PrivateRoute>
-                      <SettingsPage />
-                    </PrivateRoute>
-                  } />
-                  
-                  <Route path="/abonament" element={
-                    <PrivateRoute>
-                      <SubscriptionPage />
-                    </PrivateRoute>
-                  } />
-                  
-                  <Route path="/facturare" element={
-                    <PrivateRoute>
-                      <BillingPage />
-                    </PrivateRoute>
-                  } />
-                  
-                  {/* Progress and Materials */}
-                  <Route path="/jobs/:jobId" element={
-                    <PrivateRoute>
-                      <JobProgressPage />
-                    </PrivateRoute>
-                  } />
-                  
-                  <Route path="/materials/:jobId" element={
-                    <PrivateRoute>
-                      <MaterialsPage />
-                    </PrivateRoute>
-                  } />
-                  
-                  <Route path="/generare/:sessionId" element={
-                    <PrivateRoute>
-                      <GenerationProgressPage />
-                    </PrivateRoute>
-                  } />
-                  
-                  <Route path="/download/:sessionId" element={
-                    <PrivateRoute>
-                      <DownloadCenterPage />
-                    </PrivateRoute>
-                  } />
-                  
-                  {/* Admin Pages */}
-                  <Route path="/admin" element={
-                    <AdminRoute>
-                      <AdminDashboardPage />
-                    </AdminRoute>
-                  } />
-                  
-                  <Route path="/admin/utilizatori" element={
-                    <AdminRoute>
-                      <AdminUsersPage />
-                    </AdminRoute>
-                  } />
-                  
-                  <Route path="/admin/rapoarte" element={
-                    <AdminRoute>
-                      <AdminReportsPage />
-                    </AdminRoute>
-                  } />
-                  
-                  {/* Legal Pages */}
-                  <Route path="/termeni" element={<LegalPage type="terms" />} />
-                  <Route path="/confidentialitate" element={<LegalPage type="privacy" />} />
-                  
-                  {/* 404 Page */}
-                  <Route path="*" element={<NotFoundPage />} />
-                </Routes>
-              </Router>
-              <Toaster />
-            </JobProvider>
-          </SubscriptionProvider>
+          <JobProvider>
+            <Router>
+              <Routes>
+                {/* Public Pages */}
+                <Route path="/" element={<HomePage />} />
+                <Route path="/despre" element={<AboutPage />} />
+                <Route path="/preturi" element={<PricingPage />} />
+                <Route path="/contact" element={<ContactPage />} />
+                <Route path="/success" element={<SuccessPage />} />
+                
+                {/* Auth Pages */}
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
+                
+                {/* Dashboard Pages */}
+                <Route path="/dashboard" element={
+                  <PrivateRoute>
+                    <DashboardPage />
+                  </PrivateRoute>
+                } />
+                
+                <Route path="/genereaza-curs" element={
+                  <PrivateRoute>
+                    <GeneratePage />
+                  </PrivateRoute>
+                } />
+                
+                <Route path="/cursuri" element={
+                  <PrivateRoute>
+                    <CoursesPage />
+                  </PrivateRoute>
+                } />
+                
+                <Route path="/curs/:id" element={
+                  <PrivateRoute>
+                    <CourseViewPage />
+                  </PrivateRoute>
+                } />
+                
+                <Route path="/curs/:id/edit" element={
+                  <PrivateRoute>
+                    <CourseEditPage />
+                  </PrivateRoute>
+                } />
+                
+                {/* Account Management */}
+                <Route path="/profil" element={
+                  <PrivateRoute>
+                    <SettingsPage />
+                  </PrivateRoute>
+                } />
+                
+                <Route path="/settings" element={
+                  <PrivateRoute>
+                    <SettingsPage />
+                  </PrivateRoute>
+                } />
+                
+                <Route path="/abonament" element={
+                  <PrivateRoute>
+                    <SubscriptionPage />
+                  </PrivateRoute>
+                } />
+                
+                <Route path="/facturare" element={
+                  <PrivateRoute>
+                    <BillingPage />
+                  </PrivateRoute>
+                } />
+                
+                {/* Progress and Materials */}
+                <Route path="/jobs/:jobId" element={
+                  <PrivateRoute>
+                    <JobProgressPage />
+                  </PrivateRoute>
+                } />
+                
+                <Route path="/materials/:jobId" element={
+                  <PrivateRoute>
+                    <MaterialsPage />
+                  </PrivateRoute>
+                } />
+                
+                <Route path="/generare/:sessionId" element={
+                  <PrivateRoute>
+                    <GenerationProgressPage />
+                  </PrivateRoute>
+                } />
+                
+                <Route path="/download/:sessionId" element={
+                  <PrivateRoute>
+                    <DownloadCenterPage />
+                  </PrivateRoute>
+                } />
+                
+                {/* Admin Pages */}
+                <Route path="/admin" element={
+                  <AdminRoute>
+                    <AdminDashboardPage />
+                  </AdminRoute>
+                } />
+                
+                <Route path="/admin/utilizatori" element={
+                  <AdminRoute>
+                    <AdminUsersPage />
+                  </AdminRoute>
+                } />
+                
+                <Route path="/admin/rapoarte" element={
+                  <AdminRoute>
+                    <AdminReportsPage />
+                  </AdminRoute>
+                } />
+                
+                {/* Legal Pages */}
+                <Route path="/termeni" element={<LegalPage type="terms" />} />
+                <Route path="/confidentialitate" element={<LegalPage type="privacy" />} />
+                
+                {/* 404 Page */}
+                <Route path="*" element={<NotFoundPage />} />
+              </Routes>
+            </Router>
+            <Toaster />
+          </JobProvider>
         </AuthProvider>
       </LanguageProvider>
     </ThemeProvider>
