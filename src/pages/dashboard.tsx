@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from '@/context/language-context';
 import { useAuth } from '@/context/auth-context';
 import { useJob } from '@/context/job-context';
-import { useSubscription } from '@/context/subscription-context';
+import { useSubscription } from '@/hooks/use-subscription';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ro, enUS } from 'date-fns/locale';
 import { useLanguage } from '@/context/language-context';

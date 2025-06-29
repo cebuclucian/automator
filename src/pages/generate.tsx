@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '@/context/language-context';
 import { useJob } from '@/context/job-context';
-import { useSubscription } from '@/context/subscription-context';
+import { useSubscription } from '@/hooks/use-subscription';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
