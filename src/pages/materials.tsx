@@ -78,10 +78,19 @@ export default function MaterialsPage() {
 
   // Handle material download
   const handleDownload = async (material: Material) => {
-    if (!session?.access_token || !material.downloadUrl) {
+    if (!session?.access_token) {
       toast({
         title: t('common.error'),
-        description: 'Nu se poate descărca materialul în acest moment',
+        description: 'Nu sunteți autentificat. Vă rugăm să vă conectați din nou.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!material.content) {
+      toast({
+        title: t('common.error'),
+        description: 'Conținutul materialului nu este disponibil.',
         variant: 'destructive',
       });
       return;
@@ -90,7 +99,10 @@ export default function MaterialsPage() {
     setDownloadingMaterials(prev => new Set(prev).add(material.id));
 
     try {
-      const response = await fetch(material.downloadUrl, {
+      // Use the Supabase Edge Function for secure download
+      const downloadUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/download-material?jobId=${jobId}&materialId=${material.id}`;
+      
+      const response = await fetch(downloadUrl, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -98,25 +110,33 @@ export default function MaterialsPage() {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        if (response.status === 401) {
+          throw new Error('Nu sunteți autorizat să descărcați acest material');
+        } else if (response.status === 404) {
+          throw new Error('Materialul nu a fost găsit');
+        } else if (response.status === 410) {
+          throw new Error('Link-ul de descărcare a expirat');
+        } else {
+          throw new Error(`Eroare server: ${response.status}`);
+        }
       }
 
       // Create blob from response
       const blob = await response.blob();
       
       // Create download URL
-      const downloadUrl = window.URL.createObjectURL(blob);
+      const objectUrl = window.URL.createObjectURL(blob);
       
       // Create temporary link and trigger download
       const link = document.createElement('a');
-      link.href = downloadUrl;
+      link.href = objectUrl;
       link.download = `${material.name}.${material.format}`;
       document.body.appendChild(link);
       link.click();
       
       // Cleanup
       document.body.removeChild(link);
-      window.URL.revokeObjectURL(downloadUrl);
+      window.URL.revokeObjectURL(objectUrl);
       
       toast({
         title: t('common.success'),
@@ -127,7 +147,7 @@ export default function MaterialsPage() {
       console.error('Download error:', error);
       toast({
         title: t('common.error'),
-        description: 'Eroare la descărcarea materialului. Încercați din nou.',
+        description: error instanceof Error ? error.message : 'Eroare la descărcarea materialului. Încercați din nou.',
         variant: 'destructive',
       });
     } finally {
@@ -252,7 +272,7 @@ export default function MaterialsPage() {
                     </p>
                   </CardContent>
                   <CardFooter>
-                    {material.downloadUrl ? (
+                    {material.content ? (
                       <Button 
                         onClick={() => handleDownload(material)}
                         disabled={downloadingMaterials.has(material.id)}
