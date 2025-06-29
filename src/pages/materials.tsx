@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { ArrowLeft, Download, FileText, RefreshCw, Timer, Loader2 } from 'lucide-react';
+import { ArrowLeft, Download, FileText, RefreshCw, Timer, Loader2, FileType } from 'lucide-react';
 import SiteHeader from '@/components/site-header';
 import SiteFooter from '@/components/site-footer';
 import { Database } from '@/types/supabase';
@@ -57,7 +57,7 @@ export default function MaterialsPage() {
       case 'docx':
         return <FileText className="h-5 w-5 text-blue-600" />;
       case 'pptx':
-        return <FileText className="h-5 w-5 text-orange-600" />;
+        return <FileType className="h-5 w-5 text-orange-600" />;
       case 'pdf':
         return <FileText className="h-5 w-5 text-red-600" />;
       default:
@@ -82,15 +82,6 @@ export default function MaterialsPage() {
       toast({
         title: t('common.error'),
         description: 'Nu sunteți autentificat. Vă rugăm să vă conectați din nou.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (!material.content) {
-      toast({
-        title: t('common.error'),
-        description: 'Conținutul materialului nu este disponibil.',
         variant: 'destructive',
       });
       return;
@@ -272,7 +263,7 @@ export default function MaterialsPage() {
                     </p>
                   </CardContent>
                   <CardFooter>
-                    {material.content ? (
+                    {material.downloadUrl ? (
                       <Button 
                         onClick={() => handleDownload(material)}
                         disabled={downloadingMaterials.has(material.id)}

@@ -1,4 +1,4 @@
-// Supabase Edge Function to securely download course materials
+// Supabase Edge Function to securely download course materials from Storage
 import { createClient } from 'npm:@supabase/supabase-js@2.39.7';
 
 // Initialize Supabase client with service role key for admin access
@@ -163,35 +163,58 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Get the file from Supabase Storage
+    const filePath = `${jobId}/${material.type}_${material.id}.${material.format}`;
+    
+    const { data: fileData, error: downloadError } = await supabaseAdmin.storage
+      .from('course-materials')
+      .download(filePath);
+
+    if (downloadError || !fileData) {
+      // Try to get the file using the signed URL if direct download fails
+      if (material.downloadUrl) {
+        return Response.redirect(material.downloadUrl, 302);
+      }
+      
+      return new Response(
+        JSON.stringify({ error: 'File not found in storage' }),
+        {
+          status: 404,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    }
+
     // Determine content type based on format
     let contentType = 'application/octet-stream';
-    let fileExtension = 'txt';
     
     switch (material.format.toLowerCase()) {
       case 'docx':
         contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-        fileExtension = 'docx';
         break;
       case 'pptx':
         contentType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
-        fileExtension = 'pptx';
         break;
       case 'pdf':
         contentType = 'application/pdf';
-        fileExtension = 'pdf';
         break;
       case 'txt':
         contentType = 'text/plain';
-        fileExtension = 'txt';
         break;
     }
 
     // Create filename
     const sanitizedName = material.name.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '_');
-    const filename = `${sanitizedName}.${fileExtension}`;
+    const filename = `${sanitizedName}.${material.format}`;
 
-    // Return the material content as a downloadable file
-    return new Response(material.content || '', {
+    // Convert blob to array buffer
+    const arrayBuffer = await fileData.arrayBuffer();
+
+    // Return the file content
+    return new Response(arrayBuffer, {
       status: 200,
       headers: {
         ...corsHeaders,
