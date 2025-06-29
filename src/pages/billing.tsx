@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from '@/context/language-context';
 import { useAuth } from '@/context/auth-context';
-import { useSubscription } from '@/context/subscription-context';
+import { useSubscription } from '@/hooks/use-subscription';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, CreditCard, Download, FileText, Calendar, DollarSign } from 'lucide-react';
