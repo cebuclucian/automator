@@ -177,9 +177,15 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Redirect to the pre-signed URL
-    console.log('Redirecting to pre-signed URL');
-    return Response.redirect(material.downloadUrl, 302);
+    // Create redirect response with CORS headers
+    console.log('Redirecting to pre-signed URL with CORS headers');
+    return new Response(null, {
+      status: 302,
+      headers: {
+        ...corsHeaders,
+        'Location': material.downloadUrl,
+      },
+    });
 
   } catch (error) {
     console.error('Unexpected error in download-material function:', error);
