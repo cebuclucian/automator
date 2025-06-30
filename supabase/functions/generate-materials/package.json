@@ -4,6 +4,7 @@
   "description": "Supabase Edge Function for generating course materials",
   "main": "index.ts",
   "dependencies": {
-    "pptxgenjs": "^3.12.0"
+    "pptxgenjs": "^3.12.0",
+    "html-docx-js": "0.6.1"
   }
 }
