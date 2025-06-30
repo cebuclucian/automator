@@ -268,8 +268,8 @@ export default function JobProgressPage() {
             {currentJob.statusMessage && (
               <div className="bg-muted p-4 rounded-lg">
                 <p className="text-sm font-medium">
-                  {currentJob.currentMaterial && (
-                    <span className="text-primary">{currentJob.currentMaterial}: </span>
+                  {currentJob.stepName && (
+                    <span className="text-primary">{currentJob.stepName}: </span>
                   )}
                   {currentJob.statusMessage}
                 </p>
@@ -293,6 +293,9 @@ export default function JobProgressPage() {
                 <div className="text-muted-foreground">{t('generate.form.language')}</div>
                 <div>{jobMeta?.language === 'ro' ? 'Română' : 'English'}</div>
                 
+                <div className="text-muted-foreground">{t('generate.form.context')}</div>
+                <div>{t(`generate.form.${jobMeta?.context || 'corporate'}`)}</div>
+                
                 <div className="text-muted-foreground">{t('generate.form.level')}</div>
                 <div>{t(`generate.form.${jobMeta?.level || 'intermediate'}`)}</div>
                 
@@ -300,18 +303,10 @@ export default function JobProgressPage() {
                 <div>{t(`generate.form.${jobMeta?.audience || 'professionals'}`)}</div>
                 
                 <div className="text-muted-foreground">{t('generate.form.duration')}</div>
-                <div>
-                  {jobMeta?.duration || 1} {jobMeta?.duration === 1 ? t('generate.form.day') : t('generate.form.days')}
-                </div>
+                <div>{jobMeta?.duration || '2h'}</div>
                 
                 <div className="text-muted-foreground">{t('generate.form.tone')}</div>
-                <div>{t(`generate.form.${jobMeta?.tone || 'formal'}`)}</div>
-                
-                <div className="text-muted-foreground">{t('generate.form.context')}</div>
-                <div>{t(`generate.form.${jobMeta?.context || 'corporate'}`)}</div>
-                
-                <div className="text-muted-foreground">{t('generate.form.generateType')}</div>
-                <div>{t(`generate.form.${jobMeta?.generationType || 'full'}`)}</div>
+                <div>{t(`generate.form.${jobMeta?.tone || 'professional'}`)}</div>
               </div>
             </div>
           </CardContent>
