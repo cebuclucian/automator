@@ -158,18 +158,17 @@ Deno.serve(async (req) => {
       id: material.id,
       name: material.name,
       format: material.format,
-      hasDownloadUrl: !!material.downloadUrl,
-      hasExpiry: !!material.downloadExpiry,
+      hasStoragePath: !!material.storage_path,
       storagePath: material.storage_path
     });
 
-    // Check if download URL exists
-    if (!material.downloadUrl) {
-      console.error('No download URL available for material');
-      return createErrorResponse('Download URL not available', 404);
+    // Check if storage path exists
+    if (!material.storage_path) {
+      console.error('No storage path available for material');
+      return createErrorResponse('Material file not available', 404);
     }
 
-    // Check if download has expired
+    // Check if download has expired (if downloadExpiry is set)
     if (material.downloadExpiry) {
       const expiryDate = new Date(material.downloadExpiry);
       const now = new Date();
@@ -185,15 +184,70 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Create redirect response with CORS headers
-    console.log('Redirecting to pre-signed URL with CORS headers');
-    return new Response(null, {
-      status: 302,
-      headers: {
-        ...corsHeaders,
-        'Location': material.downloadUrl,
-      },
-    });
+    // Generate a fresh pre-signed URL from Supabase Storage
+    console.log('Generating fresh pre-signed URL for storage path:', material.storage_path);
+    
+    const { data: signedUrlData, error: signedUrlError } = await supabaseAdmin.storage
+      .from('course-materials')
+      .createSignedUrl(material.storage_path, 3600); // 1 hour expiry
+
+    if (signedUrlError) {
+      console.error('Error generating signed URL:', signedUrlError);
+      return createErrorResponse(`Failed to generate download URL: ${signedUrlError.message}`, 500);
+    }
+
+    if (!signedUrlData?.signedUrl) {
+      console.error('No signed URL returned from storage');
+      return createErrorResponse('Failed to generate download URL', 500);
+    }
+
+    console.log('Fresh pre-signed URL generated successfully');
+
+    // Return the file content directly instead of redirecting
+    try {
+      console.log('Fetching file content from storage...');
+      const fileResponse = await fetch(signedUrlData.signedUrl);
+      
+      if (!fileResponse.ok) {
+        console.error('Failed to fetch file from storage:', fileResponse.status, fileResponse.statusText);
+        return createErrorResponse(`Failed to fetch file: ${fileResponse.statusText}`, fileResponse.status);
+      }
+
+      const fileBlob = await fileResponse.blob();
+      console.log('File fetched successfully, size:', fileBlob.size, 'bytes');
+
+      // Determine content type based on file format
+      let contentType = 'application/octet-stream';
+      switch (material.format?.toLowerCase()) {
+        case 'docx':
+          contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+          break;
+        case 'pptx':
+          contentType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+          break;
+        case 'pdf':
+          contentType = 'application/pdf';
+          break;
+        case 'txt':
+          contentType = 'text/plain';
+          break;
+      }
+
+      // Return the file with appropriate headers
+      return new Response(fileBlob, {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': contentType,
+          'Content-Disposition': `attachment; filename="${material.name}.${material.format}"`,
+          'Content-Length': fileBlob.size.toString(),
+        },
+      });
+
+    } catch (fetchError) {
+      console.error('Error fetching file content:', fetchError);
+      return createErrorResponse(`Failed to fetch file content: ${fetchError.message}`, 500);
+    }
 
   } catch (error) {
     console.error('Unexpected error in download-material function:', error);
