@@ -1,4 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.39.7';
+import PptxGenJS from 'npm:pptxgenjs@3.12.0';
+import { asBlob } from 'npm:html-docx-js@0.6.0';
 
 // CORS headers
 const corsHeaders = {
@@ -62,1330 +64,2130 @@ async function updateJobProgress(
   }
 }
 
-// Helper function to generate content using a simple template system
-function generateContent(type: string, metadata: any): string {
+// Helper function to generate HTML content for DOCX conversion
+function generateHtmlContent(type: string, metadata: any): string {
   const { subject, language, level, audience, duration, tone, context } = metadata;
   
   const isRomanian = language === 'ro';
   
   switch (type) {
     case 'foundation':
-      return generateFoundationContent(subject, level, audience, duration, tone, context, isRomanian);
-    case 'slides':
-      return generateSlidesContent(subject, level, audience, duration, tone, context, isRomanian);
+      return generateFoundationHtml(subject, level, audience, duration, tone, context, isRomanian);
     case 'facilitator':
-      return generateFacilitatorContent(subject, level, audience, duration, tone, context, isRomanian);
+      return generateFacilitatorHtml(subject, level, audience, duration, tone, context, isRomanian);
     case 'participant':
-      return generateParticipantContent(subject, level, audience, duration, tone, context, isRomanian);
+      return generateParticipantHtml(subject, level, audience, duration, tone, context, isRomanian);
     case 'activities':
-      return generateActivitiesContent(subject, level, audience, duration, tone, context, isRomanian);
+      return generateActivitiesHtml(subject, level, audience, duration, tone, context, isRomanian);
     case 'evaluation':
-      return generateEvaluationContent(subject, level, audience, duration, tone, context, isRomanian);
+      return generateEvaluationHtml(subject, level, audience, duration, tone, context, isRomanian);
     case 'resources':
-      return generateResourcesContent(subject, level, audience, duration, tone, context, isRomanian);
+      return generateResourcesHtml(subject, level, audience, duration, tone, context, isRomanian);
     default:
-      return 'Content not available';
+      return '<p>Content not available</p>';
   }
 }
 
-function generateFoundationContent(subject: string, level: string, audience: string, duration: string, tone: string, context: string, isRomanian: boolean): string {
+// Helper function to generate PPTX slides
+function generatePptxSlides(metadata: any): any[] {
+  const { subject, language, level, audience, duration, tone, context } = metadata;
+  const isRomanian = language === 'ro';
+  
+  const slides = [];
+  
+  // Slide 1: Title
+  slides.push({
+    title: isRomanian ? 'Titlu' : 'Title',
+    content: [
+      { text: subject, options: { fontSize: 44, bold: true, color: '363636' } },
+      { text: isRomanian ? `Curs pentru ${audience}` : `Course for ${audience}`, options: { fontSize: 24, color: '666666' } },
+      { text: isRomanian ? `Nivel: ${level}` : `Level: ${level}`, options: { fontSize: 18, color: '888888' } }
+    ]
+  });
+  
+  // Slide 2: Objectives
+  slides.push({
+    title: isRomanian ? 'Obiectivele cursului' : 'Course Objectives',
+    content: [
+      { text: isRomanian ? '• Înțelegerea conceptelor de bază' : '• Understanding basic concepts', options: { fontSize: 20 } },
+      { text: isRomanian ? '• Aplicarea practică a cunoștințelor' : '• Practical application of knowledge', options: { fontSize: 20 } },
+      { text: isRomanian ? '• Dezvoltarea competențelor specifice' : '• Development of specific skills', options: { fontSize: 20 } },
+      { text: isRomanian ? '• Evaluarea progresului personal' : '• Personal progress evaluation', options: { fontSize: 20 } }
+    ]
+  });
+  
+  // Slide 3: Agenda
+  slides.push({
+    title: isRomanian ? 'Agenda' : 'Agenda',
+    content: [
+      { text: isRomanian ? '1. Introducere (15 min)' : '1. Introduction (15 min)', options: { fontSize: 18 } },
+      { text: isRomanian ? '2. Concepte fundamentale (45 min)' : '2. Fundamental concepts (45 min)', options: { fontSize: 18 } },
+      { text: isRomanian ? '3. Pauză (15 min)' : '3. Break (15 min)', options: { fontSize: 18 } },
+      { text: isRomanian ? '4. Aplicații practice (60 min)' : '4. Practical applications (60 min)', options: { fontSize: 18 } },
+      { text: isRomanian ? '5. Exerciții (30 min)' : '5. Exercises (30 min)', options: { fontSize: 18 } },
+      { text: isRomanian ? '6. Evaluare și închidere (15 min)' : '6. Evaluation and closing (15 min)', options: { fontSize: 18 } }
+    ]
+  });
+  
+  // Slide 4: Key Concepts
+  slides.push({
+    title: isRomanian ? 'Concepte Cheie' : 'Key Concepts',
+    content: [
+      { text: isRomanian ? '• Definiții importante' : '• Important definitions', options: { fontSize: 20 } },
+      { text: isRomanian ? '• Principii fundamentale' : '• Fundamental principles', options: { fontSize: 20 } },
+      { text: isRomanian ? '• Teorii relevante' : '• Relevant theories', options: { fontSize: 20 } },
+      { text: isRomanian ? '• Best practices' : '• Best practices', options: { fontSize: 20 } }
+    ]
+  });
+  
+  // Slide 5: Practical Applications
+  slides.push({
+    title: isRomanian ? 'Aplicații Practice' : 'Practical Applications',
+    content: [
+      { text: isRomanian ? '• Studii de caz reale' : '• Real case studies', options: { fontSize: 20 } },
+      { text: isRomanian ? '• Exemple din industrie' : '• Industry examples', options: { fontSize: 20 } },
+      { text: isRomanian ? '• Exerciții hands-on' : '• Hands-on exercises', options: { fontSize: 20 } },
+      { text: isRomanian ? '• Simulări' : '• Simulations', options: { fontSize: 20 } }
+    ]
+  });
+  
+  // Slide 6: Thank You
+  slides.push({
+    title: isRomanian ? 'Mulțumiri' : 'Thank You',
+    content: [
+      { text: isRomanian ? 'Vă mulțumim pentru participare!' : 'Thank you for your participation!', options: { fontSize: 32, bold: true, color: '363636' } },
+      { text: 'Contact: [email/telefon]', options: { fontSize: 18, color: '666666' } }
+    ]
+  });
+  
+  return slides;
+}
+
+function generateFoundationHtml(subject: string, level: string, audience: string, duration: string, tone: string, context: string, isRomanian: boolean): string {
   if (isRomanian) {
-    return `STRUCTURA ȘI OBIECTIVELE CURSULUI: ${subject}
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Structura și Obiectivele Cursului</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 40px; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #34495e; margin-top: 30px; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
+        .info-item { background: #f8f9fa; padding: 15px; border-radius: 5px; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+    <h1>STRUCTURA ȘI OBIECTIVELE CURSULUI: ${subject}</h1>
+    
+    <h2>INFORMAȚII GENERALE</h2>
+    <div class="info-grid">
+        <div class="info-item"><strong>Subiect:</strong> ${subject}</div>
+        <div class="info-item"><strong>Nivel:</strong> ${level}</div>
+        <div class="info-item"><strong>Public țintă:</strong> ${audience}</div>
+        <div class="info-item"><strong>Durată:</strong> ${duration}</div>
+        <div class="info-item"><strong>Context:</strong> ${context}</div>
+        <div class="info-item"><strong>Ton:</strong> ${tone}</div>
+    </div>
 
-INFORMAȚII GENERALE
-- Subiect: ${subject}
-- Nivel: ${level}
-- Public țintă: ${audience}
-- Durată: ${duration}
-- Context: ${context}
-- Ton: ${tone}
+    <h2>OBIECTIVE DE ÎNVĂȚARE</h2>
+    <p>La sfârșitul acestui curs, participanții vor fi capabili să:</p>
+    <ul>
+        <li>Înțeleagă conceptele fundamentale ale ${subject}</li>
+        <li>Aplice principiile de bază în situații practice</li>
+        <li>Analizeze și rezolve probleme specifice domeniului</li>
+        <li>Dezvolte competențe practice relevante</li>
+        <li>Evalueze și îmbunătățească performanța proprie</li>
+    </ul>
 
-OBIECTIVE DE ÎNVĂȚARE
-La sfârșitul acestui curs, participanții vor fi capabili să:
-1. Înțeleagă conceptele fundamentale ale ${subject}
-2. Aplice principiile de bază în situații practice
-3. Analizeze și rezolve probleme specifice domeniului
-4. Dezvolte competențe practice relevante
-5. Evalueze și îmbunătățească performanța proprie
+    <h2>AGENDA DETALIATĂ</h2>
+    <ul>
+        <li>Introducere și prezentări (15 minute)</li>
+        <li>Concepte fundamentale (30% din timp)</li>
+        <li>Aplicații practice (40% din timp)</li>
+        <li>Exerciții și activități (20% din timp)</li>
+        <li>Evaluare și feedback (10% din timp)</li>
+    </ul>
 
-AGENDA DETALIATĂ
-1. Introducere și prezentări (15 minute)
-2. Concepte fundamentale (30% din timp)
-3. Aplicații practice (40% din timp)
-4. Exerciții și activități (20% din timp)
-5. Evaluare și feedback (10% din timp)
+    <h2>METODOLOGIE</h2>
+    <ul>
+        <li>Prezentări interactive</li>
+        <li>Studii de caz</li>
+        <li>Exerciții practice</li>
+        <li>Discuții în grup</li>
+        <li>Evaluare continuă</li>
+    </ul>
 
-METODOLOGIE
-- Prezentări interactive
-- Studii de caz
-- Exerciții practice
-- Discuții în grup
-- Evaluare continuă
-
-RESURSE NECESARE
-- Materiale de prezentare
-- Fișe de lucru
-- Studii de caz
-- Instrumente de evaluare
-- Resurse suplimentare pentru dezvoltare continuă`;
+    <h2>RESURSE NECESARE</h2>
+    <ul>
+        <li>Materiale de prezentare</li>
+        <li>Fișe de lucru</li>
+        <li>Studii de caz</li>
+        <li>Instrumente de evaluare</li>
+        <li>Resurse suplimentare pentru dezvoltare continuă</li>
+    </ul>
+</body>
+</html>`;
   } else {
-    return `COURSE STRUCTURE AND OBJECTIVES: ${subject}
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Course Structure and Objectives</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 40px; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #34495e; margin-top: 30px; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
+        .info-item { background: #f8f9fa; padding: 15px; border-radius: 5px; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+    <h1>COURSE STRUCTURE AND OBJECTIVES: ${subject}</h1>
+    
+    <h2>GENERAL INFORMATION</h2>
+    <div class="info-grid">
+        <div class="info-item"><strong>Subject:</strong> ${subject}</div>
+        <div class="info-item"><strong>Level:</strong> ${level}</div>
+        <div class="info-item"><strong>Target Audience:</strong> ${audience}</div>
+        <div class="info-item"><strong>Duration:</strong> ${duration}</div>
+        <div class="info-item"><strong>Context:</strong> ${context}</div>
+        <div class="info-item"><strong>Tone:</strong> ${tone}</div>
+    </div>
 
-GENERAL INFORMATION
-- Subject: ${subject}
-- Level: ${level}
-- Target Audience: ${audience}
-- Duration: ${duration}
-- Context: ${context}
-- Tone: ${tone}
+    <h2>LEARNING OBJECTIVES</h2>
+    <p>By the end of this course, participants will be able to:</p>
+    <ul>
+        <li>Understand fundamental concepts of ${subject}</li>
+        <li>Apply basic principles in practical situations</li>
+        <li>Analyze and solve domain-specific problems</li>
+        <li>Develop relevant practical skills</li>
+        <li>Evaluate and improve their own performance</li>
+    </ul>
 
-LEARNING OBJECTIVES
-By the end of this course, participants will be able to:
-1. Understand fundamental concepts of ${subject}
-2. Apply basic principles in practical situations
-3. Analyze and solve domain-specific problems
-4. Develop relevant practical skills
-5. Evaluate and improve their own performance
+    <h2>DETAILED AGENDA</h2>
+    <ul>
+        <li>Introduction and presentations (15 minutes)</li>
+        <li>Fundamental concepts (30% of time)</li>
+        <li>Practical applications (40% of time)</li>
+        <li>Exercises and activities (20% of time)</li>
+        <li>Evaluation and feedback (10% of time)</li>
+    </ul>
 
-DETAILED AGENDA
-1. Introduction and presentations (15 minutes)
-2. Fundamental concepts (30% of time)
-3. Practical applications (40% of time)
-4. Exercises and activities (20% of time)
-5. Evaluation and feedback (10% of time)
+    <h2>METHODOLOGY</h2>
+    <ul>
+        <li>Interactive presentations</li>
+        <li>Case studies</li>
+        <li>Practical exercises</li>
+        <li>Group discussions</li>
+        <li>Continuous evaluation</li>
+    </ul>
 
-METHODOLOGY
-- Interactive presentations
-- Case studies
-- Practical exercises
-- Group discussions
-- Continuous evaluation
-
-REQUIRED RESOURCES
-- Presentation materials
-- Worksheets
-- Case studies
-- Evaluation tools
-- Additional resources for continuous development`;
+    <h2>REQUIRED RESOURCES</h2>
+    <ul>
+        <li>Presentation materials</li>
+        <li>Worksheets</li>
+        <li>Case studies</li>
+        <li>Evaluation tools</li>
+        <li>Additional resources for continuous development</li>
+    </ul>
+</body>
+</html>`;
   }
 }
 
-function generateSlidesContent(subject: string, level: string, audience: string, duration: string, tone: string, context: string, isRomanian: boolean): string {
+function generateFacilitatorHtml(subject: string, level: string, audience: string, duration: string, tone: string, context: string, isRomanian: boolean): string {
   if (isRomanian) {
-    return `SLIDE-URI DE PREZENTARE: ${subject}
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Manual Facilitator</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 40px; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #34495e; margin-top: 30px; }
+        .checklist { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        .checklist ul { list-style-type: none; padding-left: 0; }
+        .checklist li:before { content: "□ "; font-weight: bold; }
+        .tip { background: #e8f5e8; border-left: 4px solid #28a745; padding: 15px; margin: 15px 0; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+    <h1>MANUAL FACILITATOR: ${subject}</h1>
+    
+    <h2>PREGĂTIREA CURSULUI</h2>
+    <div class="checklist">
+        <p><strong>Înainte de curs:</strong></p>
+        <ul>
+            <li>Verificați echipamentele tehnice</li>
+            <li>Pregătiți materialele pentru participanți</li>
+            <li>Testați prezentarea</li>
+            <li>Pregătiți activitățile interactive</li>
+            <li>Planificați pauzele</li>
+        </ul>
+    </div>
 
-SLIDE 1: TITLU
-${subject}
-Curs pentru ${audience}
-Nivel: ${level}
+    <h2>GHID DE FACILITARE</h2>
+    
+    <h3>Introducerea (15 minute):</h3>
+    <ul>
+        <li>Salutați participanții</li>
+        <li>Prezentați-vă pe scurt</li>
+        <li>Explicați obiectivele cursului</li>
+        <li>Stabiliți regulile de bază</li>
+        <li>Creați o atmosferă relaxată</li>
+    </ul>
 
-SLIDE 2: OBIECTIVE
-Obiectivele cursului:
-• Înțelegerea conceptelor de bază
-• Aplicarea practică a cunoștințelor
-• Dezvoltarea competențelor specifice
-• Evaluarea progresului personal
+    <h3>Concepte fundamentale (45 minute):</h3>
+    <ul>
+        <li>Prezentați teoria pas cu pas</li>
+        <li>Folosiți exemple concrete</li>
+        <li>Verificați înțelegerea regulat</li>
+        <li>Încurajați întrebările</li>
+        <li>Adaptați ritmul la audiență</li>
+    </ul>
 
-SLIDE 3: AGENDA
-1. Introducere (15 min)
-2. Concepte fundamentale (45 min)
-3. Pauză (15 min)
-4. Aplicații practice (60 min)
-5. Exerciții (30 min)
-6. Evaluare și închidere (15 min)
+    <h3>Aplicații practice (60 minute):</h3>
+    <ul>
+        <li>Introduceți studiile de caz</li>
+        <li>Formați grupuri de lucru</li>
+        <li>Monitorizați progresul</li>
+        <li>Oferiți feedback constructiv</li>
+        <li>Facilitați discuțiile</li>
+    </ul>
 
-SLIDE 4: CONCEPTE CHEIE
-• Definiții importante
-• Principii fundamentale
-• Teorii relevante
-• Best practices
+    <h2>MANAGEMENTUL GRUPULUI</h2>
+    
+    <div class="tip">
+        <h3>Tehnici de facilitare:</h3>
+        <ul>
+            <li>Ascultare activă</li>
+            <li>Întrebări deschise</li>
+            <li>Reformularea ideilor</li>
+            <li>Gestionarea conflictelor</li>
+            <li>Încurajarea participării</li>
+        </ul>
+    </div>
 
-SLIDE 5: APLICAȚII PRACTICE
-• Studii de caz reale
-• Exemple din industrie
-• Exerciții hands-on
-• Simulări
+    <h3>Situații dificile:</h3>
+    <ul>
+        <li>Participanți dominatori</li>
+        <li>Persoane timide</li>
+        <li>Întrebări dificile</li>
+        <li>Tensiuni în grup</li>
+        <li>Probleme tehnice</li>
+    </ul>
 
-SLIDE 6: ACTIVITĂȚI
-• Lucru în echipă
-• Brainstorming
-• Role-playing
-• Prezentări
+    <h2>EVALUAREA PROGRESULUI</h2>
+    <p><strong>Metode de evaluare:</strong></p>
+    <ul>
+        <li>Observarea comportamentului</li>
+        <li>Întrebări de verificare</li>
+        <li>Exerciții practice</li>
+        <li>Feedback verbal</li>
+        <li>Auto-evaluarea participanților</li>
+    </ul>
 
-SLIDE 7: EVALUARE
-• Teste de cunoștințe
-• Exerciții practice
-• Feedback peer-to-peer
-• Auto-evaluare
+    <h2>ÎNCHIDEREA CURSULUI</h2>
+    <p><strong>Ultimele 15 minute:</strong></p>
+    <ul>
+        <li>Rezumați punctele cheie</li>
+        <li>Verificați atingerea obiectivelor</li>
+        <li>Colectați feedback</li>
+        <li>Distribuiți certificatele</li>
+        <li>Planificați follow-up-ul</li>
+    </ul>
 
-SLIDE 8: RESURSE
-• Materiale suplimentare
-• Cărți recomandate
-• Site-uri web utile
-• Comunități online
+    <h2>RESURSE PENTRU FACILITATOR</h2>
+    <div class="checklist">
+        <p><strong>Materiale necesare:</strong></p>
+        <ul>
+            <li>Laptop și proiector</li>
+            <li>Flipchart și markere</li>
+            <li>Post-it-uri</li>
+            <li>Materiale printate</li>
+            <li>Certificate de participare</li>
+        </ul>
+    </div>
 
-SLIDE 9: ÎNTREBĂRI ȘI RĂSPUNSURI
-Sesiune de Q&A
-
-SLIDE 10: MULȚUMIRI
-Vă mulțumim pentru participare!
-Contact: [email/telefon]
-
-NOTE PENTRU PREZENTATOR:
-- Mențineți un ritm dinamic
-- Încurajați participarea activă
-- Folosiți exemple concrete
-- Adaptați conținutul la audiență`;
+    <div class="tip">
+        <p><strong>Backup plan:</strong></p>
+        <ul>
+            <li>Activități alternative</li>
+            <li>Exerciții fără tehnologie</li>
+            <li>Materiale suplimentare</li>
+            <li>Contacte de urgență</li>
+        </ul>
+    </div>
+</body>
+</html>`;
   } else {
-    return `PRESENTATION SLIDES: ${subject}
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Facilitator Manual</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 40px; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #34495e; margin-top: 30px; }
+        .checklist { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        .checklist ul { list-style-type: none; padding-left: 0; }
+        .checklist li:before { content: "□ "; font-weight: bold; }
+        .tip { background: #e8f5e8; border-left: 4px solid #28a745; padding: 15px; margin: 15px 0; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+    <h1>FACILITATOR MANUAL: ${subject}</h1>
+    
+    <h2>COURSE PREPARATION</h2>
+    <div class="checklist">
+        <p><strong>Before the course:</strong></p>
+        <ul>
+            <li>Check technical equipment</li>
+            <li>Prepare participant materials</li>
+            <li>Test the presentation</li>
+            <li>Prepare interactive activities</li>
+            <li>Plan breaks</li>
+        </ul>
+    </div>
 
-SLIDE 1: TITLE
-${subject}
-Course for ${audience}
-Level: ${level}
+    <h2>FACILITATION GUIDE</h2>
+    
+    <h3>Introduction (15 minutes):</h3>
+    <ul>
+        <li>Greet participants</li>
+        <li>Introduce yourself briefly</li>
+        <li>Explain course objectives</li>
+        <li>Establish ground rules</li>
+        <li>Create a relaxed atmosphere</li>
+    </ul>
 
-SLIDE 2: OBJECTIVES
-Course objectives:
-• Understanding basic concepts
-• Practical application of knowledge
-• Development of specific skills
-• Personal progress evaluation
+    <h3>Fundamental concepts (45 minutes):</h3>
+    <ul>
+        <li>Present theory step by step</li>
+        <li>Use concrete examples</li>
+        <li>Check understanding regularly</li>
+        <li>Encourage questions</li>
+        <li>Adapt pace to audience</li>
+    </ul>
 
-SLIDE 3: AGENDA
-1. Introduction (15 min)
-2. Fundamental concepts (45 min)
-3. Break (15 min)
-4. Practical applications (60 min)
-5. Exercises (30 min)
-6. Evaluation and closing (15 min)
+    <h3>Practical applications (60 minutes):</h3>
+    <ul>
+        <li>Introduce case studies</li>
+        <li>Form working groups</li>
+        <li>Monitor progress</li>
+        <li>Provide constructive feedback</li>
+        <li>Facilitate discussions</li>
+    </ul>
 
-SLIDE 4: KEY CONCEPTS
-• Important definitions
-• Fundamental principles
-• Relevant theories
-• Best practices
+    <h2>GROUP MANAGEMENT</h2>
+    
+    <div class="tip">
+        <h3>Facilitation techniques:</h3>
+        <ul>
+            <li>Active listening</li>
+            <li>Open questions</li>
+            <li>Idea reformulation</li>
+            <li>Conflict management</li>
+            <li>Encouraging participation</li>
+        </ul>
+    </div>
 
-SLIDE 5: PRACTICAL APPLICATIONS
-• Real case studies
-• Industry examples
-• Hands-on exercises
-• Simulations
+    <h3>Difficult situations:</h3>
+    <ul>
+        <li>Dominating participants</li>
+        <li>Shy people</li>
+        <li>Difficult questions</li>
+        <li>Group tensions</li>
+        <li>Technical problems</li>
+    </ul>
 
-SLIDE 6: ACTIVITIES
-• Teamwork
-• Brainstorming
-• Role-playing
-• Presentations
+    <h2>PROGRESS EVALUATION</h2>
+    <p><strong>Evaluation methods:</strong></p>
+    <ul>
+        <li>Behavior observation</li>
+        <li>Verification questions</li>
+        <li>Practical exercises</li>
+        <li>Verbal feedback</li>
+        <li>Participant self-assessment</li>
+    </ul>
 
-SLIDE 7: EVALUATION
-• Knowledge tests
-• Practical exercises
-• Peer-to-peer feedback
-• Self-assessment
+    <h2>COURSE CLOSING</h2>
+    <p><strong>Last 15 minutes:</strong></p>
+    <ul>
+        <li>Summarize key points</li>
+        <li>Check objective achievement</li>
+        <li>Collect feedback</li>
+        <li>Distribute certificates</li>
+        <li>Plan follow-up</li>
+    </ul>
 
-SLIDE 8: RESOURCES
-• Additional materials
-• Recommended books
-• Useful websites
-• Online communities
+    <h2>FACILITATOR RESOURCES</h2>
+    <div class="checklist">
+        <p><strong>Required materials:</strong></p>
+        <ul>
+            <li>Laptop and projector</li>
+            <li>Flipchart and markers</li>
+            <li>Post-it notes</li>
+            <li>Printed materials</li>
+            <li>Participation certificates</li>
+        </ul>
+    </div>
 
-SLIDE 9: Q&A
-Questions and Answers Session
-
-SLIDE 10: THANK YOU
-Thank you for your participation!
-Contact: [email/phone]
-
-PRESENTER NOTES:
-- Maintain a dynamic pace
-- Encourage active participation
-- Use concrete examples
-- Adapt content to audience`;
+    <div class="tip">
+        <p><strong>Backup plan:</strong></p>
+        <ul>
+            <li>Alternative activities</li>
+            <li>Technology-free exercises</li>
+            <li>Additional materials</li>
+            <li>Emergency contacts</li>
+        </ul>
+    </div>
+</body>
+</html>`;
   }
 }
 
-function generateFacilitatorContent(subject: string, level: string, audience: string, duration: string, tone: string, context: string, isRomanian: boolean): string {
+function generateParticipantHtml(subject: string, level: string, audience: string, duration: string, tone: string, context: string, isRomanian: boolean): string {
   if (isRomanian) {
-    return `MANUAL FACILITATOR: ${subject}
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Manual Participant</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 40px; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #34495e; margin-top: 30px; }
+        .worksheet { background: #f8f9fa; border: 1px solid #dee2e6; padding: 20px; margin: 15px 0; border-radius: 5px; }
+        .fill-in { border-bottom: 1px solid #333; display: inline-block; min-width: 200px; margin: 0 5px; }
+        .checkbox { margin-right: 10px; }
+        .objectives { background: #e3f2fd; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+    <h1>MANUAL PARTICIPANT: ${subject}</h1>
+    
+    <div style="text-align: center; background: #f0f8ff; padding: 20px; border-radius: 10px; margin: 20px 0;">
+        <h2>BINE ATI VENIT!</h2>
+        <p>Acest manual vă va ghida prin cursul de <strong>${subject}</strong>. Vă rugăm să îl folosiți pentru a lua notițe și a urmări progresul dvs.</p>
+    </div>
 
-PREGĂTIREA CURSULUI
+    <div class="objectives">
+        <h2>OBIECTIVELE CURSULUI</h2>
+        <p>La sfârșitul acestui curs veți fi capabili să:</p>
+        <ul style="list-style-type: none; padding-left: 0;">
+            <li><span class="checkbox">□</span> Înțelegeți conceptele fundamentale</li>
+            <li><span class="checkbox">□</span> Aplicați cunoștințele în practică</li>
+            <li><span class="checkbox">□</span> Rezolvați probleme specifice</li>
+            <li><span class="checkbox">□</span> Evaluați propriul progres</li>
+        </ul>
+    </div>
 
-Înainte de curs:
-□ Verificați echipamentele tehnice
-□ Pregătiți materialele pentru participanți
-□ Testați prezentarea
-□ Pregătiți activitățile interactive
-□ Planificați pauzele
+    <h2>SECȚIUNEA 1: CONCEPTE FUNDAMENTALE</h2>
+    <div class="worksheet">
+        <h3>Definiții importante:</h3>
+        <p><span class="fill-in"></span></p>
+        <p><span class="fill-in"></span></p>
+        <p><span class="fill-in"></span></p>
 
-GHID DE FACILITARE
+        <h3>Principii de bază:</h3>
+        <p>1. <span class="fill-in"></span></p>
+        <p>2. <span class="fill-in"></span></p>
+        <p>3. <span class="fill-in"></span></p>
 
-Introducerea (15 minute):
-- Salutați participanții
-- Prezentați-vă pe scurt
-- Explicați obiectivele cursului
-- Stabiliți regulile de bază
-- Creați o atmosferă relaxată
+        <h3>Notițe personale:</h3>
+        <p><span class="fill-in"></span></p>
+        <p><span class="fill-in"></span></p>
+        <p><span class="fill-in"></span></p>
+    </div>
 
-Concepte fundamentale (45 minute):
-- Prezentați teoria pas cu pas
-- Folosiți exemple concrete
-- Verificați înțelegerea regulat
-- Încurajați întrebările
-- Adaptați ritmul la audiență
+    <h2>SECȚIUNEA 2: APLICAȚII PRACTICE</h2>
+    <div class="worksheet">
+        <h3>Studiul de caz 1:</h3>
+        <p>Situația: <span class="fill-in"></span></p>
+        <p>Soluția propusă: <span class="fill-in"></span></p>
+        <p>Rezultate: <span class="fill-in"></span></p>
 
-Aplicații practice (60 minute):
-- Introduceți studiile de caz
-- Formați grupuri de lucru
-- Monitorizați progresul
-- Oferiți feedback constructiv
-- Facilitați discuțiile
+        <h3>Studiul de caz 2:</h3>
+        <p>Situația: <span class="fill-in"></span></p>
+        <p>Soluția propusă: <span class="fill-in"></span></p>
+        <p>Rezultate: <span class="fill-in"></span></p>
+    </div>
 
-MANAGEMENTUL GRUPULUI
+    <h2>SECȚIUNEA 3: EXERCIȚII</h2>
+    <div class="worksheet">
+        <h3>Exercițiul 1:</h3>
+        <p>Sarcina: <span class="fill-in"></span></p>
+        <p>Răspunsul meu: <span class="fill-in"></span></p>
+        <p>Feedback: <span class="fill-in"></span></p>
 
-Tehnici de facilitare:
-• Ascultare activă
-• Întrebări deschise
-• Reformularea ideilor
-• Gestionarea conflictelor
-• Încurajarea participării
+        <h3>Exercițiul 2:</h3>
+        <p>Sarcina: <span class="fill-in"></span></p>
+        <p>Răspunsul meu: <span class="fill-in"></span></p>
+        <p>Feedback: <span class="fill-in"></span></p>
+    </div>
 
-Situații dificile:
-• Participanți dominatori
-• Persoane timide
-• Întrebări dificile
-• Tensiuni în grup
-• Probleme tehnice
+    <h2>SECȚIUNEA 4: PLANUL MEU DE ACȚIUNE</h2>
+    <div class="worksheet">
+        <h3>Ce voi aplica imediat:</h3>
+        <p>1. <span class="fill-in"></span></p>
+        <p>2. <span class="fill-in"></span></p>
+        <p>3. <span class="fill-in"></span></p>
 
-EVALUAREA PROGRESULUI
+        <h3>Ce voi dezvolta pe termen lung:</h3>
+        <p>1. <span class="fill-in"></span></p>
+        <p>2. <span class="fill-in"></span></p>
+        <p>3. <span class="fill-in"></span></p>
+    </div>
 
-Metode de evaluare:
-- Observarea comportamentului
-- Întrebări de verificare
-- Exerciții practice
-- Feedback verbal
-- Auto-evaluarea participanților
+    <h2>RESURSE SUPLIMENTARE</h2>
+    <div class="worksheet">
+        <h3>Cărți recomandate:</h3>
+        <p>• <span class="fill-in"></span></p>
+        <p>• <span class="fill-in"></span></p>
+        <p>• <span class="fill-in"></span></p>
 
-ÎNCHIDEREA CURSULUI
+        <h3>Site-uri web utile:</h3>
+        <p>• <span class="fill-in"></span></p>
+        <p>• <span class="fill-in"></span></p>
+        <p>• <span class="fill-in"></span></p>
+    </div>
 
-Ultimele 15 minute:
-- Rezumați punctele cheie
-- Verificați atingerea obiectivelor
-- Colectați feedback
-- Distribuiți certificatele
-- Planificați follow-up-ul
+    <h2>EVALUAREA CURSULUI</h2>
+    <div class="worksheet">
+        <p>Nota generală: <span class="fill-in"></span></p>
+        <p>Cel mai util aspect: <span class="fill-in"></span></p>
+        <p>Sugestii de îmbunătățire: <span class="fill-in"></span></p>
+        <p><span class="fill-in"></span></p>
+    </div>
 
-RESURSE PENTRU FACILITATOR
-
-Materiale necesare:
-□ Laptop și proiector
-□ Flipchart și markere
-□ Post-it-uri
-□ Materiale printate
-□ Certificate de participare
-
-Backup plan:
-- Activități alternative
-- Exerciții fără tehnologie
-- Materiale suplimentare
-- Contacte de urgență`;
+    <div style="text-align: center; background: #e8f5e8; padding: 20px; border-radius: 10px; margin: 30px 0;">
+        <h2>CERTIFICATE</h2>
+        <p><strong>Felicitări pentru finalizarea cursului!</strong></p>
+        <p>Data: <span class="fill-in"></span></p>
+        <p>Semnătura facilitatorului: <span class="fill-in"></span></p>
+    </div>
+</body>
+</html>`;
   } else {
-    return `FACILITATOR MANUAL: ${subject}
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Participant Manual</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 40px; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #34495e; margin-top: 30px; }
+        .worksheet { background: #f8f9fa; border: 1px solid #dee2e6; padding: 20px; margin: 15px 0; border-radius: 5px; }
+        .fill-in { border-bottom: 1px solid #333; display: inline-block; min-width: 200px; margin: 0 5px; }
+        .checkbox { margin-right: 10px; }
+        .objectives { background: #e3f2fd; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+    <h1>PARTICIPANT MANUAL: ${subject}</h1>
+    
+    <div style="text-align: center; background: #f0f8ff; padding: 20px; border-radius: 10px; margin: 20px 0;">
+        <h2>WELCOME!</h2>
+        <p>This manual will guide you through the <strong>${subject}</strong> course. Please use it to take notes and track your progress.</p>
+    </div>
 
-COURSE PREPARATION
+    <div class="objectives">
+        <h2>COURSE OBJECTIVES</h2>
+        <p>By the end of this course you will be able to:</p>
+        <ul style="list-style-type: none; padding-left: 0;">
+            <li><span class="checkbox">□</span> Understand fundamental concepts</li>
+            <li><span class="checkbox">□</span> Apply knowledge in practice</li>
+            <li><span class="checkbox">□</span> Solve specific problems</li>
+            <li><span class="checkbox">□</span> Evaluate your own progress</li>
+        </ul>
+    </div>
 
-Before the course:
-□ Check technical equipment
-□ Prepare participant materials
-□ Test the presentation
-□ Prepare interactive activities
-□ Plan breaks
+    <h2>SECTION 1: FUNDAMENTAL CONCEPTS</h2>
+    <div class="worksheet">
+        <h3>Important definitions:</h3>
+        <p><span class="fill-in"></span></p>
+        <p><span class="fill-in"></span></p>
+        <p><span class="fill-in"></span></p>
 
-FACILITATION GUIDE
+        <h3>Basic principles:</h3>
+        <p>1. <span class="fill-in"></span></p>
+        <p>2. <span class="fill-in"></span></p>
+        <p>3. <span class="fill-in"></span></p>
 
-Introduction (15 minutes):
-- Greet participants
-- Introduce yourself briefly
-- Explain course objectives
-- Establish ground rules
-- Create a relaxed atmosphere
+        <h3>Personal notes:</h3>
+        <p><span class="fill-in"></span></p>
+        <p><span class="fill-in"></span></p>
+        <p><span class="fill-in"></span></p>
+    </div>
 
-Fundamental concepts (45 minutes):
-- Present theory step by step
-- Use concrete examples
-- Check understanding regularly
-- Encourage questions
-- Adapt pace to audience
+    <h2>SECTION 2: PRACTICAL APPLICATIONS</h2>
+    <div class="worksheet">
+        <h3>Case study 1:</h3>
+        <p>Situation: <span class="fill-in"></span></p>
+        <p>Proposed solution: <span class="fill-in"></span></p>
+        <p>Results: <span class="fill-in"></span></p>
 
-Practical applications (60 minutes):
-- Introduce case studies
-- Form working groups
-- Monitor progress
-- Provide constructive feedback
-- Facilitate discussions
+        <h3>Case study 2:</h3>
+        <p>Situation: <span class="fill-in"></span></p>
+        <p>Proposed solution: <span class="fill-in"></span></p>
+        <p>Results: <span class="fill-in"></span></p>
+    </div>
 
-GROUP MANAGEMENT
+    <h2>SECTION 3: EXERCISES</h2>
+    <div class="worksheet">
+        <h3>Exercise 1:</h3>
+        <p>Task: <span class="fill-in"></span></p>
+        <p>My answer: <span class="fill-in"></span></p>
+        <p>Feedback: <span class="fill-in"></span></p>
 
-Facilitation techniques:
-• Active listening
-• Open questions
-• Idea reformulation
-• Conflict management
-• Encouraging participation
+        <h3>Exercise 2:</h3>
+        <p>Task: <span class="fill-in"></span></p>
+        <p>My answer: <span class="fill-in"></span></p>
+        <p>Feedback: <span class="fill-in"></span></p>
+    </div>
 
-Difficult situations:
-• Dominating participants
-• Shy people
-• Difficult questions
-• Group tensions
-• Technical problems
+    <h2>SECTION 4: MY ACTION PLAN</h2>
+    <div class="worksheet">
+        <h3>What I will apply immediately:</h3>
+        <p>1. <span class="fill-in"></span></p>
+        <p>2. <span class="fill-in"></span></p>
+        <p>3. <span class="fill-in"></span></p>
 
-PROGRESS EVALUATION
+        <h3>What I will develop long-term:</h3>
+        <p>1. <span class="fill-in"></span></p>
+        <p>2. <span class="fill-in"></span></p>
+        <p>3. <span class="fill-in"></span></p>
+    </div>
 
-Evaluation methods:
-- Behavior observation
-- Verification questions
-- Practical exercises
-- Verbal feedback
-- Participant self-assessment
+    <h2>ADDITIONAL RESOURCES</h2>
+    <div class="worksheet">
+        <h3>Recommended books:</h3>
+        <p>• <span class="fill-in"></span></p>
+        <p>• <span class="fill-in"></span></p>
+        <p>• <span class="fill-in"></span></p>
 
-COURSE CLOSING
+        <h3>Useful websites:</h3>
+        <p>• <span class="fill-in"></span></p>
+        <p>• <span class="fill-in"></span></p>
+        <p>• <span class="fill-in"></span></p>
+    </div>
 
-Last 15 minutes:
-- Summarize key points
-- Check objective achievement
-- Collect feedback
-- Distribute certificates
-- Plan follow-up
+    <h2>COURSE EVALUATION</h2>
+    <div class="worksheet">
+        <p>Overall rating: <span class="fill-in"></span></p>
+        <p>Most useful aspect: <span class="fill-in"></span></p>
+        <p>Improvement suggestions: <span class="fill-in"></span></p>
+        <p><span class="fill-in"></span></p>
+    </div>
 
-FACILITATOR RESOURCES
-
-Required materials:
-□ Laptop and projector
-□ Flipchart and markers
-□ Post-it notes
-□ Printed materials
-□ Participation certificates
-
-Backup plan:
-- Alternative activities
-- Technology-free exercises
-- Additional materials
-- Emergency contacts`;
+    <div style="text-align: center; background: #e8f5e8; padding: 20px; border-radius: 10px; margin: 30px 0;">
+        <h2>CERTIFICATE</h2>
+        <p><strong>Congratulations on completing the course!</strong></p>
+        <p>Date: <span class="fill-in"></span></p>
+        <p>Facilitator signature: <span class="fill-in"></span></p>
+    </div>
+</body>
+</html>`;
   }
 }
 
-function generateParticipantContent(subject: string, level: string, audience: string, duration: string, tone: string, context: string, isRomanian: boolean): string {
+function generateActivitiesHtml(subject: string, level: string, audience: string, duration: string, tone: string, context: string, isRomanian: boolean): string {
   if (isRomanian) {
-    return `MANUAL PARTICIPANT: ${subject}
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Activități și Exerciții</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 40px; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #34495e; margin-top: 30px; }
+        .activity { background: #f8f9fa; border-left: 4px solid #007bff; padding: 20px; margin: 20px 0; border-radius: 5px; }
+        .activity-header { background: #007bff; color: white; padding: 10px; margin: -20px -20px 15px -20px; border-radius: 5px 5px 0 0; }
+        .time-info { background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 5px; margin: 10px 0; }
+        .instructions { background: #d1ecf1; border: 1px solid #bee5eb; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .materials { background: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+    <h1>ACTIVITĂȚI ȘI EXERCIȚII: ${subject}</h1>
+    
+    <div class="activity">
+        <div class="activity-header">
+            <h2 style="margin: 0; color: white;">ACTIVITATEA 1: BRAINSTORMING</h2>
+        </div>
+        <div class="time-info">
+            <strong>Timp:</strong> 15 minute | <strong>Participanți:</strong> Toți | <strong>Obiectiv:</strong> Generarea de idei creative
+        </div>
+        
+        <div class="instructions">
+            <h3>Instrucțiuni:</h3>
+            <ol>
+                <li>Formați grupuri de 4-5 persoane</li>
+                <li>Alegeți un moderator pentru fiecare grup</li>
+                <li>Generați cât mai multe idei în 10 minute</li>
+                <li>Prezentați cele mai bune 3 idei (5 minute)</li>
+            </ol>
+        </div>
+        
+        <p><strong>Întrebarea:</strong> "Cum putem aplica ${subject} în activitatea noastră zilnică?"</p>
+    </div>
 
-BINE ATI VENIT!
+    <div class="activity">
+        <div class="activity-header">
+            <h2 style="margin: 0; color: white;">ACTIVITATEA 2: STUDIU DE CAZ</h2>
+        </div>
+        <div class="time-info">
+            <strong>Timp:</strong> 30 minute | <strong>Participanți:</strong> Grupuri de 3-4 persoane | <strong>Obiectiv:</strong> Aplicarea practică a conceptelor
+        </div>
+        
+        <h3>Scenariul:</h3>
+        <p>O companie din domeniul ${context} se confruntă cu următoarea provocare...</p>
+        <p><em>[Descrierea detaliată a situației]</em></p>
+        
+        <div class="instructions">
+            <h3>Sarcini:</h3>
+            <ol>
+                <li>Analizați situația (10 minute)</li>
+                <li>Propuneți soluții (15 minute)</li>
+                <li>Prezentați soluția (5 minute)</li>
+            </ol>
+        </div>
+    </div>
 
-Acest manual vă va ghida prin cursul de ${subject}. Vă rugăm să îl folosiți pentru a lua notițe și a urmări progresul dvs.
+    <div class="activity">
+        <div class="activity-header">
+            <h2 style="margin: 0; color: white;">ACTIVITATEA 3: ROLE-PLAYING</h2>
+        </div>
+        <div class="time-info">
+            <strong>Timp:</strong> 20 minute | <strong>Participanți:</strong> Perechi | <strong>Obiectiv:</strong> Exersarea competențelor practice
+        </div>
+        
+        <h3>Roluri:</h3>
+        <ul>
+            <li><strong>Persoana A:</strong> Manager/Facilitator</li>
+            <li><strong>Persoana B:</strong> Angajat/Participant</li>
+        </ul>
+        
+        <p><strong>Scenariul:</strong> Simulați o situație în care trebuie să aplicați principiile învățate...</p>
+    </div>
 
-OBIECTIVELE CURSULUI
+    <div class="activity">
+        <div class="activity-header">
+            <h2 style="margin: 0; color: white;">ACTIVITATEA 4: QUIZ INTERACTIV</h2>
+        </div>
+        <div class="time-info">
+            <strong>Timp:</strong> 15 minute | <strong>Participanți:</strong> Individual | <strong>Obiectiv:</strong> Verificarea cunoștințelor
+        </div>
+        
+        <div class="instructions">
+            <h3>Întrebări:</h3>
+            <ol>
+                <li>Care sunt cele 3 principii fundamentale ale ${subject}?</li>
+                <li>Dați un exemplu de aplicare practică</li>
+                <li>Care sunt principalele provocări în implementare?</li>
+                <li>Cum măsurați succesul?</li>
+                <li>Ce resurse sunt necesare?</li>
+            </ol>
+        </div>
+    </div>
 
-La sfârșitul acestui curs veți fi capabili să:
-□ Înțelegeți conceptele fundamentale
-□ Aplicați cunoștințele în practică
-□ Rezolvați probleme specifice
-□ Evaluați propriul progres
+    <div class="activity">
+        <div class="activity-header">
+            <h2 style="margin: 0; color: white;">ACTIVITATEA 5: PLANUL DE ACȚIUNE</h2>
+        </div>
+        <div class="time-info">
+            <strong>Timp:</strong> 25 minute | <strong>Participanți:</strong> Individual apoi în perechi | <strong>Obiectiv:</strong> Planificarea implementării
+        </div>
+        
+        <div class="instructions">
+            <h3>Pași:</h3>
+            <ol>
+                <li>Identificați 3 obiective SMART (10 minute)</li>
+                <li>Planificați acțiunile concrete (10 minute)</li>
+                <li>Împărtășiți cu partenerul pentru feedback (5 minute)</li>
+            </ol>
+        </div>
+        
+        <h3>Template plan de acțiune:</h3>
+        <ul>
+            <li><strong>Obiectiv 1:</strong> ________________</li>
+            <li><strong>Acțiuni:</strong> __________________</li>
+            <li><strong>Termen:</strong> ___________________</li>
+            <li><strong>Resurse:</strong> __________________</li>
+        </ul>
+    </div>
 
-SECȚIUNEA 1: CONCEPTE FUNDAMENTALE
+    <div class="activity">
+        <div class="activity-header">
+            <h2 style="margin: 0; color: white;">ACTIVITATEA 6: FEEDBACK 360°</h2>
+        </div>
+        <div class="time-info">
+            <strong>Timp:</strong> 20 minute | <strong>Participanți:</strong> Grupuri de 6 persoane | <strong>Obiectiv:</strong> Dezvoltarea competențelor de feedback
+        </div>
+        
+        <div class="instructions">
+            <h3>Proces:</h3>
+            <ol>
+                <li>Fiecare prezintă o situație (2 minute)</li>
+                <li>Ceilalți oferă feedback constructiv (3 minute)</li>
+                <li>Rotația continuă până toți au prezentat</li>
+            </ol>
+        </div>
+    </div>
 
-Definiții importante:
-_________________________________
-_________________________________
-_________________________________
-
-Principii de bază:
-1. _____________________________
-2. _____________________________
-3. _____________________________
-
-Notițe personale:
-_________________________________
-_________________________________
-_________________________________
-
-SECȚIUNEA 2: APLICAȚII PRACTICE
-
-Studiul de caz 1:
-Situația: ________________________
-Soluția propusă: _________________
-Rezultate: ______________________
-
-Studiul de caz 2:
-Situația: ________________________
-Soluția propusă: _________________
-Rezultate: ______________________
-
-SECȚIUNEA 3: EXERCIȚII
-
-Exercițiul 1:
-Sarcina: _________________________
-Răspunsul meu: ___________________
-Feedback: _______________________
-
-Exercițiul 2:
-Sarcina: _________________________
-Răspunsul meu: ___________________
-Feedback: _______________________
-
-SECȚIUNEA 4: PLANUL MEU DE ACȚIUNE
-
-Ce voi aplica imediat:
-1. _____________________________
-2. _____________________________
-3. _____________________________
-
-Ce voi dezvolta pe termen lung:
-1. _____________________________
-2. _____________________________
-3. _____________________________
-
-RESURSE SUPLIMENTARE
-
-Cărți recomandate:
-• _____________________________
-• _____________________________
-• _____________________________
-
-Site-uri web utile:
-• _____________________________
-• _____________________________
-• _____________________________
-
-EVALUAREA CURSULUI
-
-Nota generală: ___________________
-Cel mai util aspect: ______________
-Sugestii de îmbunătățire: _________
-_________________________________
-
-CERTIFICATE
-
-Felicitări pentru finalizarea cursului!
-Data: ___________________________
-Semnătura facilitatorului: ________`;
+    <div class="materials">
+        <h2>MATERIALE NECESARE:</h2>
+        <ul style="list-style-type: none; padding-left: 0;">
+            <li>□ Flipchart și markere</li>
+            <li>□ Post-it-uri colorate</li>
+            <li>□ Cronometru</li>
+            <li>□ Fișe de evaluare</li>
+            <li>□ Premii simbolice pentru activități</li>
+        </ul>
+    </div>
+</body>
+</html>`;
   } else {
-    return `PARTICIPANT MANUAL: ${subject}
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Activities and Exercises</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 40px; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #34495e; margin-top: 30px; }
+        .activity { background: #f8f9fa; border-left: 4px solid #007bff; padding: 20px; margin: 20px 0; border-radius: 5px; }
+        .activity-header { background: #007bff; color: white; padding: 10px; margin: -20px -20px 15px -20px; border-radius: 5px 5px 0 0; }
+        .time-info { background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 5px; margin: 10px 0; }
+        .instructions { background: #d1ecf1; border: 1px solid #bee5eb; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .materials { background: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+    <h1>ACTIVITIES AND EXERCISES: ${subject}</h1>
+    
+    <div class="activity">
+        <div class="activity-header">
+            <h2 style="margin: 0; color: white;">ACTIVITY 1: BRAINSTORMING</h2>
+        </div>
+        <div class="time-info">
+            <strong>Time:</strong> 15 minutes | <strong>Participants:</strong> Everyone | <strong>Objective:</strong> Generate creative ideas
+        </div>
+        
+        <div class="instructions">
+            <h3>Instructions:</h3>
+            <ol>
+                <li>Form groups of 4-5 people</li>
+                <li>Choose a moderator for each group</li>
+                <li>Generate as many ideas as possible in 10 minutes</li>
+                <li>Present the best 3 ideas (5 minutes)</li>
+            </ol>
+        </div>
+        
+        <p><strong>Question:</strong> "How can we apply ${subject} in our daily activities?"</p>
+    </div>
 
-WELCOME!
+    <div class="activity">
+        <div class="activity-header">
+            <h2 style="margin: 0; color: white;">ACTIVITY 2: CASE STUDY</h2>
+        </div>
+        <div class="time-info">
+            <strong>Time:</strong> 30 minutes | <strong>Participants:</strong> Groups of 3-4 people | <strong>Objective:</strong> Practical application of concepts
+        </div>
+        
+        <h3>Scenario:</h3>
+        <p>A company in the ${context} field faces the following challenge...</p>
+        <p><em>[Detailed situation description]</em></p>
+        
+        <div class="instructions">
+            <h3>Tasks:</h3>
+            <ol>
+                <li>Analyze the situation (10 minutes)</li>
+                <li>Propose solutions (15 minutes)</li>
+                <li>Present the solution (5 minutes)</li>
+            </ol>
+        </div>
+    </div>
 
-This manual will guide you through the ${subject} course. Please use it to take notes and track your progress.
+    <div class="activity">
+        <div class="activity-header">
+            <h2 style="margin: 0; color: white;">ACTIVITY 3: ROLE-PLAYING</h2>
+        </div>
+        <div class="time-info">
+            <strong>Time:</strong> 20 minutes | <strong>Participants:</strong> Pairs | <strong>Objective:</strong> Practice practical skills
+        </div>
+        
+        <h3>Roles:</h3>
+        <ul>
+            <li><strong>Person A:</strong> Manager/Facilitator</li>
+            <li><strong>Person B:</strong> Employee/Participant</li>
+        </ul>
+        
+        <p><strong>Scenario:</strong> Simulate a situation where you need to apply the learned principles...</p>
+    </div>
 
-COURSE OBJECTIVES
+    <div class="activity">
+        <div class="activity-header">
+            <h2 style="margin: 0; color: white;">ACTIVITY 4: INTERACTIVE QUIZ</h2>
+        </div>
+        <div class="time-info">
+            <strong>Time:</strong> 15 minutes | <strong>Participants:</strong> Individual | <strong>Objective:</strong> Knowledge verification
+        </div>
+        
+        <div class="instructions">
+            <h3>Questions:</h3>
+            <ol>
+                <li>What are the 3 fundamental principles of ${subject}?</li>
+                <li>Give an example of practical application</li>
+                <li>What are the main implementation challenges?</li>
+                <li>How do you measure success?</li>
+                <li>What resources are needed?</li>
+            </ol>
+        </div>
+    </div>
 
-By the end of this course you will be able to:
-□ Understand fundamental concepts
-□ Apply knowledge in practice
-□ Solve specific problems
-□ Evaluate your own progress
+    <div class="activity">
+        <div class="activity-header">
+            <h2 style="margin: 0; color: white;">ACTIVITY 5: ACTION PLAN</h2>
+        </div>
+        <div class="time-info">
+            <strong>Time:</strong> 25 minutes | <strong>Participants:</strong> Individual then in pairs | <strong>Objective:</strong> Implementation planning
+        </div>
+        
+        <div class="instructions">
+            <h3>Steps:</h3>
+            <ol>
+                <li>Identify 3 SMART objectives (10 minutes)</li>
+                <li>Plan concrete actions (10 minutes)</li>
+                <li>Share with partner for feedback (5 minutes)</li>
+            </ol>
+        </div>
+        
+        <h3>Action plan template:</h3>
+        <ul>
+            <li><strong>Objective 1:</strong> _______________</li>
+            <li><strong>Actions:</strong> __________________</li>
+            <li><strong>Deadline:</strong> _________________</li>
+            <li><strong>Resources:</strong> ________________</li>
+        </ul>
+    </div>
 
-SECTION 1: FUNDAMENTAL CONCEPTS
+    <div class="activity">
+        <div class="activity-header">
+            <h2 style="margin: 0; color: white;">ACTIVITY 6: 360° FEEDBACK</h2>
+        </div>
+        <div class="time-info">
+            <strong>Time:</strong> 20 minutes | <strong>Participants:</strong> Groups of 6 people | <strong>Objective:</strong> Develop feedback skills
+        </div>
+        
+        <div class="instructions">
+            <h3>Process:</h3>
+            <ol>
+                <li>Each presents a situation (2 minutes)</li>
+                <li>Others provide constructive feedback (3 minutes)</li>
+                <li>Rotation continues until everyone has presented</li>
+            </ol>
+        </div>
+    </div>
 
-Important definitions:
-_________________________________
-_________________________________
-_________________________________
-
-Basic principles:
-1. _____________________________
-2. _____________________________
-3. _____________________________
-
-Personal notes:
-_________________________________
-_________________________________
-_________________________________
-
-SECTION 2: PRACTICAL APPLICATIONS
-
-Case study 1:
-Situation: _______________________
-Proposed solution: _______________
-Results: ________________________
-
-Case study 2:
-Situation: _______________________
-Proposed solution: _______________
-Results: ________________________
-
-SECTION 3: EXERCISES
-
-Exercise 1:
-Task: ___________________________
-My answer: ______________________
-Feedback: _______________________
-
-Exercise 2:
-Task: ___________________________
-My answer: ______________________
-Feedback: _______________________
-
-SECTION 4: MY ACTION PLAN
-
-What I will apply immediately:
-1. _____________________________
-2. _____________________________
-3. _____________________________
-
-What I will develop long-term:
-1. _____________________________
-2. _____________________________
-3. _____________________________
-
-ADDITIONAL RESOURCES
-
-Recommended books:
-• _____________________________
-• _____________________________
-• _____________________________
-
-Useful websites:
-• _____________________________
-• _____________________________
-• _____________________________
-
-COURSE EVALUATION
-
-Overall rating: __________________
-Most useful aspect: ______________
-Improvement suggestions: _________
-_________________________________
-
-CERTIFICATE
-
-Congratulations on completing the course!
-Date: ___________________________
-Facilitator signature: ____________`;
+    <div class="materials">
+        <h2>REQUIRED MATERIALS:</h2>
+        <ul style="list-style-type: none; padding-left: 0;">
+            <li>□ Flipchart and markers</li>
+            <li>□ Colored post-it notes</li>
+            <li>□ Timer</li>
+            <li>□ Evaluation sheets</li>
+            <li>□ Symbolic prizes for activities</li>
+        </ul>
+    </div>
+</body>
+</html>`;
   }
 }
 
-function generateActivitiesContent(subject: string, level: string, audience: string, duration: string, tone: string, context: string, isRomanian: boolean): string {
+function generateEvaluationHtml(subject: string, level: string, audience: string, duration: string, tone: string, context: string, isRomanian: boolean): string {
   if (isRomanian) {
-    return `ACTIVITĂȚI ȘI EXERCIȚII: ${subject}
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Instrumente de Evaluare</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 40px; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #34495e; margin-top: 30px; }
+        .evaluation-section { background: #f8f9fa; border: 1px solid #dee2e6; padding: 20px; margin: 20px 0; border-radius: 5px; }
+        .scale { background: #e3f2fd; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        .criteria { background: #fff3e0; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        .fill-in { border-bottom: 1px solid #333; display: inline-block; min-width: 200px; margin: 0 5px; }
+        .checkbox { margin-right: 10px; }
+        .rating { display: inline-block; margin: 0 10px; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 8px; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>INSTRUMENTE DE EVALUARE: ${subject}</h1>
+    
+    <div class="evaluation-section">
+        <h2>EVALUARE INIȚIALĂ (PRE-CURS)</h2>
+        
+        <h3>Întrebări de evaluare a cunoștințelor:</h3>
+        <ol>
+            <li>Cât de familiar sunteți cu ${subject}? (1-10) <span class="fill-in"></span></li>
+            <li>Ce experiență aveți în domeniu? <span class="fill-in"></span></li>
+            <li>Care sunt așteptările dvs. de la acest curs? <span class="fill-in"></span></li>
+            <li>Ce provocări întâmpinați în prezent? <span class="fill-in"></span></li>
+            <li>Cum măsurați succesul în acest domeniu? <span class="fill-in"></span></li>
+        </ol>
+    </div>
 
-ACTIVITATEA 1: BRAINSTORMING
-Timp: 15 minute
-Participanți: Toți
-Obiectiv: Generarea de idei creative
+    <div class="evaluation-section">
+        <h2>EVALUARE CONTINUĂ (DURANTE CURS)</h2>
+        
+        <h3>Checkpoint 1 (după 30 minute):</h3>
+        <ul style="list-style-type: none; padding-left: 0;">
+            <li><span class="checkbox">□</span> Conceptele sunt clare</li>
+            <li><span class="checkbox">□</span> Ritmul este potrivit</li>
+            <li><span class="checkbox">□</span> Exemplele sunt relevante</li>
+            <li><span class="checkbox">□</span> Am întrebări despre: <span class="fill-in"></span></li>
+        </ul>
 
-Instrucțiuni:
-1. Formați grupuri de 4-5 persoane
-2. Alegeți un moderator pentru fiecare grup
-3. Generați cât mai multe idei în 10 minute
-4. Prezentați cele mai bune 3 idei (5 minute)
+        <h3>Checkpoint 2 (după exerciții):</h3>
+        <ul style="list-style-type: none; padding-left: 0;">
+            <li><span class="checkbox">□</span> Am înțeles aplicațiile practice</li>
+            <li><span class="checkbox">□</span> Pot să aplic cunoștințele</li>
+            <li><span class="checkbox">□</span> Am nevoie de clarificări la: <span class="fill-in"></span></li>
+            <li><span class="checkbox">□</span> Mă simt confortabil cu materialul</li>
+        </ul>
+    </div>
 
-Întrebarea: "Cum putem aplica ${subject} în activitatea noastră zilnică?"
+    <div class="evaluation-section">
+        <h2>EVALUARE FINALĂ (POST-CURS)</h2>
+        
+        <h3>Test de cunoștințe:</h3>
+        
+        <p><strong>1. Definiți conceptul principal al ${subject}:</strong></p>
+        <p><span class="fill-in" style="min-width: 400px;"></span></p>
+        
+        <p><strong>2. Enumerați 3 beneficii ale aplicării acestor principii:</strong></p>
+        <p>a) <span class="fill-in"></span></p>
+        <p>b) <span class="fill-in"></span></p>
+        <p>c) <span class="fill-in"></span></p>
+        
+        <p><strong>3. Descrieți un scenariu de aplicare practică:</strong></p>
+        <p><span class="fill-in" style="min-width: 400px;"></span></p>
+        <p><span class="fill-in" style="min-width: 400px;"></span></p>
+        
+        <p><strong>4. Care sunt principalele provocări în implementare?</strong></p>
+        <p><span class="fill-in" style="min-width: 400px;"></span></p>
+        
+        <p><strong>5. Cum veți măsura progresul dvs.?</strong></p>
+        <p><span class="fill-in" style="min-width: 400px;"></span></p>
+    </div>
 
-ACTIVITATEA 2: STUDIU DE CAZ
-Timp: 30 minute
-Participanți: Grupuri de 3-4 persoane
-Obiectiv: Aplicarea practică a conceptelor
+    <div class="evaluation-section">
+        <h2>EVALUAREA COMPETENȚELOR PRACTICE</h2>
+        
+        <h3>Exercițiul practic:</h3>
+        <p><strong>Sarcina:</strong> Aplicați principiile învățate într-o situație simulată</p>
+        
+        <div class="criteria">
+            <h3>Criterii de evaluare:</h3>
+            <table>
+                <tr>
+                    <th>Criteriu</th>
+                    <th>Pondere</th>
+                    <th>Punctaj (1-10)</th>
+                    <th>Observații</th>
+                </tr>
+                <tr>
+                    <td>Înțelegerea conceptelor</td>
+                    <td>25%</td>
+                    <td><span class="fill-in" style="min-width: 50px;"></span></td>
+                    <td><span class="fill-in"></span></td>
+                </tr>
+                <tr>
+                    <td>Aplicarea corectă</td>
+                    <td>25%</td>
+                    <td><span class="fill-in" style="min-width: 50px;"></span></td>
+                    <td><span class="fill-in"></span></td>
+                </tr>
+                <tr>
+                    <td>Creativitatea soluției</td>
+                    <td>25%</td>
+                    <td><span class="fill-in" style="min-width: 50px;"></span></td>
+                    <td><span class="fill-in"></span></td>
+                </tr>
+                <tr>
+                    <td>Comunicarea rezultatelor</td>
+                    <td>25%</td>
+                    <td><span class="fill-in" style="min-width: 50px;"></span></td>
+                    <td><span class="fill-in"></span></td>
+                </tr>
+            </table>
+        </div>
+        
+        <div class="scale">
+            <h3>Scala de notare:</h3>
+            <ul>
+                <li><strong>Excelent (9-10):</strong> Depășește așteptările</li>
+                <li><strong>Bun (7-8):</strong> Îndeplinește așteptările</li>
+                <li><strong>Satisfăcător (5-6):</strong> Îndeplinește parțial</li>
+                <li><strong>Nesatisfăcător (1-4):</strong> Nu îndeplinește</li>
+            </ul>
+        </div>
+    </div>
 
-Scenariul:
-O companie din domeniul ${context} se confruntă cu următoarea provocare...
-[Descrierea detaliată a situației]
+    <div class="evaluation-section">
+        <h2>AUTO-EVALUAREA</h2>
+        
+        <h3>Reflecție personală:</h3>
+        <p><strong>1. Ce am învățat cel mai important?</strong></p>
+        <p><span class="fill-in" style="min-width: 400px;"></span></p>
+        
+        <p><strong>2. Cum voi aplica aceste cunoștințe?</strong></p>
+        <p><span class="fill-in" style="min-width: 400px;"></span></p>
+        
+        <p><strong>3. Ce competențe vreau să dezvolt mai mult?</strong></p>
+        <p><span class="fill-in" style="min-width: 400px;"></span></p>
+        
+        <p><strong>4. Care este următorul meu pas?</strong></p>
+        <p><span class="fill-in" style="min-width: 400px;"></span></p>
+    </div>
 
-Sarcini:
-1. Analizați situația (10 minute)
-2. Propuneți soluții (15 minute)
-3. Prezentați soluția (5 minute)
+    <div class="evaluation-section">
+        <h2>EVALUAREA CURSULUI</h2>
+        
+        <table>
+            <tr>
+                <th>Aspect</th>
+                <th>Foarte bun</th>
+                <th>Bun</th>
+                <th>Satisfăcător</th>
+                <th>Nesatisfăcător</th>
+            </tr>
+            <tr>
+                <td>Conținutul cursului</td>
+                <td><span class="checkbox">□</span></td>
+                <td><span class="checkbox">□</span></td>
+                <td><span class="checkbox">□</span></td>
+                <td><span class="checkbox">□</span></td>
+            </tr>
+            <tr>
+                <td>Facilitatorul</td>
+                <td><span class="checkbox">□</span></td>
+                <td><span class="checkbox">□</span></td>
+                <td><span class="checkbox">□</span></td>
+                <td><span class="checkbox">□</span></td>
+            </tr>
+            <tr>
+                <td>Materialele</td>
+                <td><span class="checkbox">□</span></td>
+                <td><span class="checkbox">□</span></td>
+                <td><span class="checkbox">□</span></td>
+                <td><span class="checkbox">□</span></td>
+            </tr>
+        </table>
+        
+        <h3>Recomandări:</h3>
+        <ul style="list-style-type: none; padding-left: 0;">
+            <li><span class="checkbox">□</span> Recomand cu căldură</li>
+            <li><span class="checkbox">□</span> Recomand</li>
+            <li><span class="checkbox">□</span> Recomand cu rezerve</li>
+            <li><span class="checkbox">□</span> Nu recomand</li>
+        </ul>
+        
+        <p><strong>Sugestii de îmbunătățire:</strong></p>
+        <p><span class="fill-in" style="min-width: 400px;"></span></p>
+        <p><span class="fill-in" style="min-width: 400px;"></span></p>
+    </div>
 
-ACTIVITATEA 3: ROLE-PLAYING
-Timp: 20 minute
-Participanți: Perechi
-Obiectiv: Exersarea competențelor practice
-
-Roluri:
-- Persoana A: Manager/Facilitator
-- Persoana B: Angajat/Participant
-
-Scenariul:
-Simulați o situație în care trebuie să aplicați principiile învățate...
-
-ACTIVITATEA 4: QUIZ INTERACTIV
-Timp: 15 minute
-Participanți: Individual
-Obiectiv: Verificarea cunoștințelor
-
-Întrebări:
-1. Care sunt cele 3 principii fundamentale ale ${subject}?
-2. Dați un exemplu de aplicare practică
-3. Care sunt principalele provocări în implementare?
-4. Cum măsurați succesul?
-5. Ce resurse sunt necesare?
-
-ACTIVITATEA 5: PLANUL DE ACȚIUNE
-Timp: 25 minute
-Participanți: Individual apoi în perechi
-Obiectiv: Planificarea implementării
-
-Pași:
-1. Identificați 3 obiective SMART (10 minute)
-2. Planificați acțiunile concrete (10 minute)
-3. Împărtășiți cu partenerul pentru feedback (5 minute)
-
-Template plan de acțiune:
-- Obiectiv 1: ________________
-- Acțiuni: __________________
-- Termen: ___________________
-- Resurse: __________________
-
-ACTIVITATEA 6: FEEDBACK 360°
-Timp: 20 minute
-Participanți: Grupuri de 6 persoane
-Obiectiv: Dezvoltarea competențelor de feedback
-
-Proces:
-1. Fiecare prezintă o situație (2 minute)
-2. Ceilalți oferă feedback constructiv (3 minute)
-3. Rotația continuă până toți au prezentat
-
-MATERIALE NECESARE:
-□ Flipchart și markere
-□ Post-it-uri colorate
-□ Cronometru
-□ Fișe de evaluare
-□ Premii simbolice pentru activități`;
+    <div class="evaluation-section">
+        <h2>PLANUL DE DEZVOLTARE CONTINUĂ</h2>
+        
+        <h3>Obiective pe termen scurt (1-3 luni):</h3>
+        <p>1. <span class="fill-in"></span></p>
+        <p>2. <span class="fill-in"></span></p>
+        <p>3. <span class="fill-in"></span></p>
+        
+        <h3>Obiective pe termen lung (6-12 luni):</h3>
+        <p>1. <span class="fill-in"></span></p>
+        <p>2. <span class="fill-in"></span></p>
+        <p>3. <span class="fill-in"></span></p>
+        
+        <h3>Resurse pentru dezvoltare:</h3>
+        <ul style="list-style-type: none; padding-left: 0;">
+            <li><span class="checkbox">□</span> Cărți suplimentare</li>
+            <li><span class="checkbox">□</span> Cursuri avansate</li>
+            <li><span class="checkbox">□</span> Mentoring</li>
+            <li><span class="checkbox">□</span> Practică ghidată</li>
+            <li><span class="checkbox">□</span> Comunități de practică</li>
+        </ul>
+    </div>
+</body>
+</html>`;
   } else {
-    return `ACTIVITIES AND EXERCISES: ${subject}
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Evaluation Tools</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 40px; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #34495e; margin-top: 30px; }
+        .evaluation-section { background: #f8f9fa; border: 1px solid #dee2e6; padding: 20px; margin: 20px 0; border-radius: 5px; }
+        .scale { background: #e3f2fd; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        .criteria { background: #fff3e0; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        .fill-in { border-bottom: 1px solid #333; display: inline-block; min-width: 200px; margin: 0 5px; }
+        .checkbox { margin-right: 10px; }
+        .rating { display: inline-block; margin: 0 10px; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 8px; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>EVALUATION TOOLS: ${subject}</h1>
+    
+    <div class="evaluation-section">
+        <h2>INITIAL EVALUATION (PRE-COURSE)</h2>
+        
+        <h3>Knowledge assessment questions:</h3>
+        <ol>
+            <li>How familiar are you with ${subject}? (1-10) <span class="fill-in"></span></li>
+            <li>What experience do you have in the field? <span class="fill-in"></span></li>
+            <li>What are your expectations from this course? <span class="fill-in"></span></li>
+            <li>What challenges are you currently facing? <span class="fill-in"></span></li>
+            <li>How do you measure success in this domain? <span class="fill-in"></span></li>
+        </ol>
+    </div>
 
-ACTIVITY 1: BRAINSTORMING
-Time: 15 minutes
-Participants: Everyone
-Objective: Generate creative ideas
+    <div class="evaluation-section">
+        <h2>CONTINUOUS EVALUATION (DURING COURSE)</h2>
+        
+        <h3>Checkpoint 1 (after 30 minutes):</h3>
+        <ul style="list-style-type: none; padding-left: 0;">
+            <li><span class="checkbox">□</span> Concepts are clear</li>
+            <li><span class="checkbox">□</span> Pace is appropriate</li>
+            <li><span class="checkbox">□</span> Examples are relevant</li>
+            <li><span class="checkbox">□</span> I have questions about: <span class="fill-in"></span></li>
+        </ul>
 
-Instructions:
-1. Form groups of 4-5 people
-2. Choose a moderator for each group
-3. Generate as many ideas as possible in 10 minutes
-4. Present the best 3 ideas (5 minutes)
+        <h3>Checkpoint 2 (after exercises):</h3>
+        <ul style="list-style-type: none; padding-left: 0;">
+            <li><span class="checkbox">□</span> I understood practical applications</li>
+            <li><span class="checkbox">□</span> I can apply the knowledge</li>
+            <li><span class="checkbox">□</span> I need clarifications on: <span class="fill-in"></span></li>
+            <li><span class="checkbox">□</span> I feel comfortable with the material</li>
+        </ul>
+    </div>
 
-Question: "How can we apply ${subject} in our daily activities?"
+    <div class="evaluation-section">
+        <h2>FINAL EVALUATION (POST-COURSE)</h2>
+        
+        <h3>Knowledge test:</h3>
+        
+        <p><strong>1. Define the main concept of ${subject}:</strong></p>
+        <p><span class="fill-in" style="min-width: 400px;"></span></p>
+        
+        <p><strong>2. List 3 benefits of applying these principles:</strong></p>
+        <p>a) <span class="fill-in"></span></p>
+        <p>b) <span class="fill-in"></span></p>
+        <p>c) <span class="fill-in"></span></p>
+        
+        <p><strong>3. Describe a practical application scenario:</strong></p>
+        <p><span class="fill-in" style="min-width: 400px;"></span></p>
+        <p><span class="fill-in" style="min-width: 400px;"></span></p>
+        
+        <p><strong>4. What are the main implementation challenges?</strong></p>
+        <p><span class="fill-in" style="min-width: 400px;"></span></p>
+        
+        <p><strong>5. How will you measure your progress?</strong></p>
+        <p><span class="fill-in" style="min-width: 400px;"></span></p>
+    </div>
 
-ACTIVITY 2: CASE STUDY
-Time: 30 minutes
-Participants: Groups of 3-4 people
-Objective: Practical application of concepts
+    <div class="evaluation-section">
+        <h2>PRACTICAL SKILLS EVALUATION</h2>
+        
+        <h3>Practical exercise:</h3>
+        <p><strong>Task:</strong> Apply learned principles in a simulated situation</p>
+        
+        <div class="criteria">
+            <h3>Evaluation criteria:</h3>
+            <table>
+                <tr>
+                    <th>Criterion</th>
+                    <th>Weight</th>
+                    <th>Score (1-10)</th>
+                    <th>Comments</th>
+                </tr>
+                <tr>
+                    <td>Concept understanding</td>
+                    <td>25%</td>
+                    <td><span class="fill-in" style="min-width: 50px;"></span></td>
+                    <td><span class="fill-in"></span></td>
+                </tr>
+                <tr>
+                    <td>Correct application</td>
+                    <td>25%</td>
+                    <td><span class="fill-in" style="min-width: 50px;"></span></td>
+                    <td><span class="fill-in"></span></td>
+                </tr>
+                <tr>
+                    <td>Solution creativity</td>
+                    <td>25%</td>
+                    <td><span class="fill-in" style="min-width: 50px;"></span></td>
+                    <td><span class="fill-in"></span></td>
+                </tr>
+                <tr>
+                    <td>Results communication</td>
+                    <td>25%</td>
+                    <td><span class="fill-in" style="min-width: 50px;"></span></td>
+                    <td><span class="fill-in"></span></td>
+                </tr>
+            </table>
+        </div>
+        
+        <div class="scale">
+            <h3>Grading scale:</h3>
+            <ul>
+                <li><strong>Excellent (9-10):</strong> Exceeds expectations</li>
+                <li><strong>Good (7-8):</strong> Meets expectations</li>
+                <li><strong>Satisfactory (5-6):</strong> Partially meets</li>
+                <li><strong>Unsatisfactory (1-4):</strong> Does not meet</li>
+            </ul>
+        </div>
+    </div>
 
-Scenario:
-A company in the ${context} field faces the following challenge...
-[Detailed situation description]
+    <div class="evaluation-section">
+        <h2>SELF-EVALUATION</h2>
+        
+        <h3>Personal reflection:</h3>
+        <p><strong>1. What did I learn that was most important?</strong></p>
+        <p><span class="fill-in" style="min-width: 400px;"></span></p>
+        
+        <p><strong>2. How will I apply this knowledge?</strong></p>
+        <p><span class="fill-in" style="min-width: 400px;"></span></p>
+        
+        <p><strong>3. What skills do I want to develop more?</strong></p>
+        <p><span class="fill-in" style="min-width: 400px;"></span></p>
+        
+        <p><strong>4. What is my next step?</strong></p>
+        <p><span class="fill-in" style="min-width: 400px;"></span></p>
+    </div>
 
-Tasks:
-1. Analyze the situation (10 minutes)
-2. Propose solutions (15 minutes)
-3. Present the solution (5 minutes)
+    <div class="evaluation-section">
+        <h2>COURSE EVALUATION</h2>
+        
+        <table>
+            <tr>
+                <th>Aspect</th>
+                <th>Very good</th>
+                <th>Good</th>
+                <th>Satisfactory</th>
+                <th>Unsatisfactory</th>
+            </tr>
+            <tr>
+                <td>Course content</td>
+                <td><span class="checkbox">□</span></td>
+                <td><span class="checkbox">□</span></td>
+                <td><span class="checkbox">□</span></td>
+                <td><span class="checkbox">□</span></td>
+            </tr>
+            <tr>
+                <td>Facilitator</td>
+                <td><span class="checkbox">□</span></td>
+                <td><span class="checkbox">□</span></td>
+                <td><span class="checkbox">□</span></td>
+                <td><span class="checkbox">□</span></td>
+            </tr>
+            <tr>
+                <td>Materials</td>
+                <td><span class="checkbox">□</span></td>
+                <td><span class="checkbox">□</span></td>
+                <td><span class="checkbox">□</span></td>
+                <td><span class="checkbox">□</span></td>
+            </tr>
+        </table>
+        
+        <h3>Recommendations:</h3>
+        <ul style="list-style-type: none; padding-left: 0;">
+            <li><span class="checkbox">□</span> Highly recommend</li>
+            <li><span class="checkbox">□</span> Recommend</li>
+            <li><span class="checkbox">□</span> Recommend with reservations</li>
+            <li><span class="checkbox">□</span> Do not recommend</li>
+        </ul>
+        
+        <p><strong>Improvement suggestions:</strong></p>
+        <p><span class="fill-in" style="min-width: 400px;"></span></p>
+        <p><span class="fill-in" style="min-width: 400px;"></span></p>
+    </div>
 
-ACTIVITY 3: ROLE-PLAYING
-Time: 20 minutes
-Participants: Pairs
-Objective: Practice practical skills
-
-Roles:
-- Person A: Manager/Facilitator
-- Person B: Employee/Participant
-
-Scenario:
-Simulate a situation where you need to apply the learned principles...
-
-ACTIVITY 4: INTERACTIVE QUIZ
-Time: 15 minutes
-Participants: Individual
-Objective: Knowledge verification
-
-Questions:
-1. What are the 3 fundamental principles of ${subject}?
-2. Give an example of practical application
-3. What are the main implementation challenges?
-4. How do you measure success?
-5. What resources are needed?
-
-ACTIVITY 5: ACTION PLAN
-Time: 25 minutes
-Participants: Individual then in pairs
-Objective: Implementation planning
-
-Steps:
-1. Identify 3 SMART objectives (10 minutes)
-2. Plan concrete actions (10 minutes)
-3. Share with partner for feedback (5 minutes)
-
-Action plan template:
-- Objective 1: _______________
-- Actions: __________________
-- Deadline: _________________
-- Resources: ________________
-
-ACTIVITY 6: 360° FEEDBACK
-Time: 20 minutes
-Participants: Groups of 6 people
-Objective: Develop feedback skills
-
-Process:
-1. Each presents a situation (2 minutes)
-2. Others provide constructive feedback (3 minutes)
-3. Rotation continues until everyone has presented
-
-REQUIRED MATERIALS:
-□ Flipchart and markers
-□ Colored post-it notes
-□ Timer
-□ Evaluation sheets
-□ Symbolic prizes for activities`;
+    <div class="evaluation-section">
+        <h2>CONTINUOUS DEVELOPMENT PLAN</h2>
+        
+        <h3>Short-term objectives (1-3 months):</h3>
+        <p>1. <span class="fill-in"></span></p>
+        <p>2. <span class="fill-in"></span></p>
+        <p>3. <span class="fill-in"></span></p>
+        
+        <h3>Long-term objectives (6-12 months):</h3>
+        <p>1. <span class="fill-in"></span></p>
+        <p>2. <span class="fill-in"></span></p>
+        <p>3. <span class="fill-in"></span></p>
+        
+        <h3>Development resources:</h3>
+        <ul style="list-style-type: none; padding-left: 0;">
+            <li><span class="checkbox">□</span> Additional books</li>
+            <li><span class="checkbox">□</span> Advanced courses</li>
+            <li><span class="checkbox">□</span> Mentoring</li>
+            <li><span class="checkbox">□</span> Guided practice</li>
+            <li><span class="checkbox">□</span> Communities of practice</li>
+        </ul>
+    </div>
+</body>
+</html>`;
   }
 }
 
-function generateEvaluationContent(subject: string, level: string, audience: string, duration: string, tone: string, context: string, isRomanian: boolean): string {
+function generateResourcesHtml(subject: string, level: string, audience: string, duration: string, tone: string, context: string, isRomanian: boolean): string {
   if (isRomanian) {
-    return `INSTRUMENTE DE EVALUARE: ${subject}
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Resurse Suplimentare</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 40px; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #34495e; margin-top: 30px; }
+        .resource-section { background: #f8f9fa; border-left: 4px solid #28a745; padding: 20px; margin: 20px 0; border-radius: 5px; }
+        .book-list { background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        .online-resources { background: #d1ecf1; border: 1px solid #bee5eb; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        .development-plan { background: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        .checklist { list-style-type: none; padding-left: 0; }
+        .checklist li:before { content: "□ "; font-weight: bold; margin-right: 10px; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 8px; }
+        .contact-info { background: #e2e3e5; padding: 15px; border-radius: 5px; margin: 15px 0; }
+    </style>
+</head>
+<body>
+    <h1>RESURSE SUPLIMENTARE: ${subject}</h1>
+    
+    <div class="resource-section">
+        <h2>CĂRȚI RECOMANDATE</h2>
+        
+        <div class="book-list">
+            <h3>Nivel începător:</h3>
+            <ol>
+                <li><strong>"Introducere în ${subject}"</strong> - Autor Principal
+                    <ul>
+                        <li>Concepte de bază explicate simplu</li>
+                        <li>Exemple practice din viața reală</li>
+                        <li>Exerciții pas cu pas</li>
+                    </ul>
+                </li>
+                <li><strong>"${subject} pentru toți"</strong> - Expert Recunoscut
+                    <ul>
+                        <li>Abordare accesibilă</li>
+                        <li>Studii de caz diverse</li>
+                        <li>Ghid practic de implementare</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+        
+        <div class="book-list">
+            <h3>Nivel intermediar:</h3>
+            <ol start="3">
+                <li><strong>"${subject} avansat"</strong> - Specialist în domeniu
+                    <ul>
+                        <li>Tehnici sofisticate</li>
+                        <li>Analize aprofundate</li>
+                        <li>Strategii complexe</li>
+                    </ul>
+                </li>
+                <li><strong>"Masterizarea ${subject}"</strong> - Autoritate în domeniu
+                    <ul>
+                        <li>Perspective inovatoare</li>
+                        <li>Cercetări recente</li>
+                        <li>Aplicații avansate</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+    </div>
 
-EVALUARE INIȚIALĂ (PRE-CURS)
+    <div class="resource-section">
+        <h2>RESURSE ONLINE</h2>
+        
+        <div class="online-resources">
+            <h3>Site-uri web utile:</h3>
+            <ul>
+                <li><strong>www.${subject.toLowerCase().replace(/\s+/g, '')}.org</strong> - Resurse oficiale</li>
+                <li><strong>www.${context}academy.com</strong> - Cursuri online</li>
+                <li><strong>www.expertsin${subject.toLowerCase().replace(/\s+/g, '')}.net</strong> - Comunitate de experți</li>
+            </ul>
+            
+            <h3>Bloguri și articole:</h3>
+            <ul>
+                <li><strong>Blog-ul ${subject}</strong> - Articole săptămânale</li>
+                <li><strong>Revista ${context}</strong> - Studii de caz lunare</li>
+                <li><strong>Newsletter ${subject} Trends</strong> - Tendințe și noutăți</li>
+            </ul>
+            
+            <h3>Podcasturi:</h3>
+            <ul>
+                <li><strong>"${subject} în practică"</strong> - Episoade săptămânale</li>
+                <li><strong>"Experți în ${subject}"</strong> - Interviuri cu specialiști</li>
+                <li><strong>"${context} și ${subject}"</strong> - Discuții tematice</li>
+            </ul>
+        </div>
+    </div>
 
-Întrebări de evaluare a cunoștințelor:
-1. Cât de familiar sunteți cu ${subject}? (1-10)
-2. Ce experiență aveți în domeniu?
-3. Care sunt așteptările dvs. de la acest curs?
-4. Ce provocări întâmpinați în prezent?
-5. Cum măsurați succesul în acest domeniu?
+    <div class="resource-section">
+        <h2>CURSURI ȘI CERTIFICĂRI</h2>
+        
+        <h3>Cursuri online:</h3>
+        <ul class="checklist">
+            <li>${subject} Fundamentals (40 ore)</li>
+            <li>Advanced ${subject} Techniques (60 ore)</li>
+            <li>${subject} for ${audience} (30 ore)</li>
+            <li>${context} ${subject} Specialization (80 ore)</li>
+        </ul>
+        
+        <h3>Certificări profesionale:</h3>
+        <ul class="checklist">
+            <li>Certified ${subject} Practitioner</li>
+            <li>Advanced ${subject} Specialist</li>
+            <li>${subject} Master Certification</li>
+            <li>${context} ${subject} Expert</li>
+        </ul>
+    </div>
 
-EVALUARE CONTINUĂ (DURANTE CURS)
+    <div class="resource-section">
+        <h2>COMUNITĂȚI ȘI NETWORKING</h2>
+        
+        <h3>Grupuri profesionale:</h3>
+        <ul>
+            <li><strong>Asociația ${subject} România</strong></li>
+            <li><strong>Grupul LinkedIn "${subject} Professionals"</strong></li>
+            <li><strong>Comunitatea Facebook "${subject} în ${context}"</strong></li>
+        </ul>
+        
+        <h3>Evenimente și conferințe:</h3>
+        <ul>
+            <li>Conferința Anuală ${subject}</li>
+            <li>Workshop-uri lunare ${subject}</li>
+            <li>Meetup-uri locale ${subject}</li>
+            <li>Webinare săptămânale</li>
+        </ul>
+    </div>
 
-Checkpoint 1 (după 30 minute):
-□ Conceptele sunt clare
-□ Ritmul este potrivit
-□ Exemplele sunt relevante
-□ Am întrebări despre: ___________
+    <div class="resource-section">
+        <h2>INSTRUMENTE ȘI SOFTWARE</h2>
+        
+        <h3>Instrumente gratuite:</h3>
+        <ul class="checklist">
+            <li>${subject} Calculator - Calcule rapide</li>
+            <li>${subject} Planner - Planificare proiecte</li>
+            <li>${subject} Tracker - Monitorizare progres</li>
+        </ul>
+        
+        <h3>Software profesional:</h3>
+        <ul class="checklist">
+            <li>${subject} Pro Suite - Soluție completă</li>
+            <li>Advanced ${subject} Tools - Instrumente avansate</li>
+            <li>${subject} Analytics - Analiză și raportare</li>
+        </ul>
+    </div>
 
-Checkpoint 2 (după exerciții):
-□ Am înțeles aplicațiile practice
-□ Pot să aplic cunoștințele
-□ Am nevoie de clarificări la: ____
-□ Mă simt confortabil cu materialul
+    <div class="resource-section">
+        <h2>TEMPLATE-URI ȘI MODELE</h2>
+        
+        <h3>Documente utile:</h3>
+        <ul class="checklist">
+            <li>Template plan de implementare ${subject}</li>
+            <li>Checklist evaluare ${subject}</li>
+            <li>Model raport progres ${subject}</li>
+            <li>Ghid best practices ${subject}</li>
+        </ul>
+    </div>
 
-EVALUARE FINALĂ (POST-CURS)
+    <div class="development-plan">
+        <h2>DEZVOLTARE CONTINUĂ</h2>
+        
+        <h3>Plan de învățare pe 6 luni:</h3>
+        
+        <h4>Luna 1-2: Consolidarea fundamentelor</h4>
+        <ul>
+            <li>Recitirea materialelor cursului</li>
+            <li>Aplicarea în proiecte mici</li>
+            <li>Participarea la webinare</li>
+        </ul>
+        
+        <h4>Luna 3-4: Aprofundarea cunoștințelor</h4>
+        <ul>
+            <li>Citirea unei cărți avansate</li>
+            <li>Participarea la workshop-uri</li>
+            <li>Networking cu experți</li>
+        </ul>
+        
+        <h4>Luna 5-6: Specializarea</h4>
+        <ul>
+            <li>Alegerea unei nișe specifice</li>
+            <li>Dezvoltarea unui proiect complex</li>
+            <li>Pregătirea pentru certificare</li>
+        </ul>
+    </div>
 
-Test de cunoștințe:
+    <div class="contact-info">
+        <h2>CONTACTE UTILE</h2>
+        
+        <h3>Mentori și consultanți:</h3>
+        <ul>
+            <li><strong>Nume Expert 1</strong> - email@expert1.com</li>
+            <li><strong>Nume Expert 2</strong> - email@expert2.com</li>
+            <li><strong>Nume Consultant</strong> - email@consultant.com</li>
+        </ul>
+        
+        <h3>Organizații de sprijin:</h3>
+        <ul>
+            <li>Centrul de Excelență ${subject}</li>
+            <li>Institutul ${context} ${subject}</li>
+            <li>Fundația pentru ${subject}</li>
+        </ul>
+    </div>
 
-1. Definiți conceptul principal al ${subject}:
-_________________________________
-
-2. Enumerați 3 beneficii ale aplicării acestor principii:
-a) ____________________________
-b) ____________________________
-c) ____________________________
-
-3. Descrieți un scenariu de aplicare practică:
-_________________________________
-_________________________________
-
-4. Care sunt principalele provocări în implementare?
-_________________________________
-
-5. Cum veți măsura progresul dvs.?
-_________________________________
-
-EVALUAREA COMPETENȚELOR PRACTICE
-
-Exercițiul practic:
-Sarcina: Aplicați principiile învățate într-o situație simulată
-
-Criterii de evaluare:
-□ Înțelegerea conceptelor (25%)
-□ Aplicarea corectă (25%)
-□ Creativitatea soluției (25%)
-□ Comunicarea rezultatelor (25%)
-
-Scala de notare:
-- Excelent (9-10): Depășește așteptările
-- Bun (7-8): Îndeplinește așteptările
-- Satisfăcător (5-6): Îndeplinește parțial
-- Nesatisfăcător (1-4): Nu îndeplinește
-
-AUTO-EVALUAREA
-
-Reflecție personală:
-1. Ce am învățat cel mai important?
-_________________________________
-
-2. Cum voi aplica aceste cunoștințe?
-_________________________________
-
-3. Ce competențe vreau să dezvolt mai mult?
-_________________________________
-
-4. Care este următorul meu pas?
-_________________________________
-
-EVALUAREA CURSULUI
-
-Conținutul cursului:
-□ Foarte util □ Util □ Parțial util □ Nu prea util
-
-Facilitatorul:
-□ Excelent □ Bun □ Satisfăcător □ Nesatisfăcător
-
-Materialele:
-□ Foarte bune □ Bune □ Satisfăcătoare □ Slabe
-
-Recomandări:
-□ Recomand cu căldură
-□ Recomand
-□ Recomand cu rezerve
-□ Nu recomand
-
-Sugestii de îmbunătățire:
-_________________________________
-_________________________________
-
-PLANUL DE DEZVOLTARE CONTINUĂ
-
-Obiective pe termen scurt (1-3 luni):
-1. ____________________________
-2. ____________________________
-3. ____________________________
-
-Obiective pe termen lung (6-12 luni):
-1. ____________________________
-2. ____________________________
-3. ____________________________
-
-Resurse pentru dezvoltare:
-□ Cărți suplimentare
-□ Cursuri avansate
-□ Mentoring
-□ Practică ghidată
-□ Comunități de practică`;
+    <div class="resource-section">
+        <h2>ACTUALIZĂRI ȘI TENDINȚE</h2>
+        
+        <h3>Surse de informații actuale:</h3>
+        <ul class="checklist">
+            <li>Newsletter-e specializate</li>
+            <li>Rapoarte anuale din industrie</li>
+            <li>Studii de cercetare recente</li>
+            <li>Analize de piață</li>
+        </ul>
+        
+        <h3>Tendințe emergente în ${subject}:</h3>
+        <ol>
+            <li>Digitalizarea proceselor</li>
+            <li>Automatizarea activităților</li>
+            <li>Integrarea AI și ML</li>
+            <li>Sustenabilitatea și responsabilitatea</li>
+            <li>Personalizarea experiențelor</li>
+        </ol>
+    </div>
+</body>
+</html>`;
   } else {
-    return `EVALUATION TOOLS: ${subject}
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Additional Resources</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 40px; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        h2 { color: #34495e; margin-top: 30px; }
+        .resource-section { background: #f8f9fa; border-left: 4px solid #28a745; padding: 20px; margin: 20px 0; border-radius: 5px; }
+        .book-list { background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        .online-resources { background: #d1ecf1; border: 1px solid #bee5eb; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        .development-plan { background: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        .checklist { list-style-type: none; padding-left: 0; }
+        .checklist li:before { content: "□ "; font-weight: bold; margin-right: 10px; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 8px; }
+        .contact-info { background: #e2e3e5; padding: 15px; border-radius: 5px; margin: 15px 0; }
+    </style>
+</head>
+<body>
+    <h1>ADDITIONAL RESOURCES: ${subject}</h1>
+    
+    <div class="resource-section">
+        <h2>RECOMMENDED BOOKS</h2>
+        
+        <div class="book-list">
+            <h3>Beginner level:</h3>
+            <ol>
+                <li><strong>"Introduction to ${subject}"</strong> - Main Author
+                    <ul>
+                        <li>Basic concepts explained simply</li>
+                        <li>Real-life practical examples</li>
+                        <li>Step-by-step exercises</li>
+                    </ul>
+                </li>
+                <li><strong>"${subject} for Everyone"</strong> - Recognized Expert
+                    <ul>
+                        <li>Accessible approach</li>
+                        <li>Diverse case studies</li>
+                        <li>Practical implementation guide</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+        
+        <div class="book-list">
+            <h3>Intermediate level:</h3>
+            <ol start="3">
+                <li><strong>"Advanced ${subject}"</strong> - Domain Specialist
+                    <ul>
+                        <li>Sophisticated techniques</li>
+                        <li>In-depth analyses</li>
+                        <li>Complex strategies</li>
+                    </ul>
+                </li>
+                <li><strong>"Mastering ${subject}"</strong> - Domain Authority
+                    <ul>
+                        <li>Innovative perspectives</li>
+                        <li>Recent research</li>
+                        <li>Advanced applications</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+    </div>
 
-INITIAL EVALUATION (PRE-COURSE)
+    <div class="resource-section">
+        <h2>ONLINE RESOURCES</h2>
+        
+        <div class="online-resources">
+            <h3>Useful websites:</h3>
+            <ul>
+                <li><strong>www.${subject.toLowerCase().replace(/\s+/g, '')}.org</strong> - Official resources</li>
+                <li><strong>www.${context}academy.com</strong> - Online courses</li>
+                <li><strong>www.expertsin${subject.toLowerCase().replace(/\s+/g, '')}.net</strong> - Expert community</li>
+            </ul>
+            
+            <h3>Blogs and articles:</h3>
+            <ul>
+                <li><strong>${subject} Blog</strong> - Weekly articles</li>
+                <li><strong>${context} Magazine</strong> - Monthly case studies</li>
+                <li><strong>${subject} Trends Newsletter</strong> - Trends and news</li>
+            </ul>
+            
+            <h3>Podcasts:</h3>
+            <ul>
+                <li><strong>"${subject} in Practice"</strong> - Weekly episodes</li>
+                <li><strong>"${subject} Experts"</strong> - Specialist interviews</li>
+                <li><strong>"${context} and ${subject}"</strong> - Thematic discussions</li>
+            </ul>
+        </div>
+    </div>
 
-Knowledge assessment questions:
-1. How familiar are you with ${subject}? (1-10)
-2. What experience do you have in the field?
-3. What are your expectations from this course?
-4. What challenges are you currently facing?
-5. How do you measure success in this domain?
+    <div class="resource-section">
+        <h2>COURSES AND CERTIFICATIONS</h2>
+        
+        <h3>Online courses:</h3>
+        <ul class="checklist">
+            <li>${subject} Fundamentals (40 hours)</li>
+            <li>Advanced ${subject} Techniques (60 hours)</li>
+            <li>${subject} for ${audience} (30 hours)</li>
+            <li>${context} ${subject} Specialization (80 hours)</li>
+        </ul>
+        
+        <h3>Professional certifications:</h3>
+        <ul class="checklist">
+            <li>Certified ${subject} Practitioner</li>
+            <li>Advanced ${subject} Specialist</li>
+            <li>${subject} Master Certification</li>
+            <li>${context} ${subject} Expert</li>
+        </ul>
+    </div>
 
-CONTINUOUS EVALUATION (DURING COURSE)
+    <div class="resource-section">
+        <h2>COMMUNITIES AND NETWORKING</h2>
+        
+        <h3>Professional groups:</h3>
+        <ul>
+            <li><strong>${subject} Association</strong></li>
+            <li><strong>LinkedIn Group "${subject} Professionals"</strong></li>
+            <li><strong>Facebook Community "${subject} in ${context}"</strong></li>
+        </ul>
+        
+        <h3>Events and conferences:</h3>
+        <ul>
+            <li>Annual ${subject} Conference</li>
+            <li>Monthly ${subject} Workshops</li>
+            <li>Local ${subject} Meetups</li>
+            <li>Weekly webinars</li>
+        </ul>
+    </div>
 
-Checkpoint 1 (after 30 minutes):
-□ Concepts are clear
-□ Pace is appropriate
-□ Examples are relevant
-□ I have questions about: ________
+    <div class="resource-section">
+        <h2>TOOLS AND SOFTWARE</h2>
+        
+        <h3>Free tools:</h3>
+        <ul class="checklist">
+            <li>${subject} Calculator - Quick calculations</li>
+            <li>${subject} Planner - Project planning</li>
+            <li>${subject} Tracker - Progress monitoring</li>
+        </ul>
+        
+        <h3>Professional software:</h3>
+        <ul class="checklist">
+            <li>${subject} Pro Suite - Complete solution</li>
+            <li>Advanced ${subject} Tools - Advanced tools</li>
+            <li>${subject} Analytics - Analysis and reporting</li>
+        </ul>
+    </div>
 
-Checkpoint 2 (after exercises):
-□ I understood practical applications
-□ I can apply the knowledge
-□ I need clarifications on: _______
-□ I feel comfortable with the material
+    <div class="resource-section">
+        <h2>TEMPLATES AND MODELS</h2>
+        
+        <h3>Useful documents:</h3>
+        <ul class="checklist">
+            <li>${subject} implementation plan template</li>
+            <li>${subject} evaluation checklist</li>
+            <li>${subject} progress report model</li>
+            <li>${subject} best practices guide</li>
+        </ul>
+    </div>
 
-FINAL EVALUATION (POST-COURSE)
+    <div class="development-plan">
+        <h2>CONTINUOUS DEVELOPMENT</h2>
+        
+        <h3>6-month learning plan:</h3>
+        
+        <h4>Month 1-2: Foundation consolidation</h4>
+        <ul>
+            <li>Re-reading course materials</li>
+            <li>Application in small projects</li>
+            <li>Webinar participation</li>
+        </ul>
+        
+        <h4>Month 3-4: Knowledge deepening</h4>
+        <ul>
+            <li>Reading an advanced book</li>
+            <li>Workshop participation</li>
+            <li>Expert networking</li>
+        </ul>
+        
+        <h4>Month 5-6: Specialization</h4>
+        <ul>
+            <li>Choosing a specific niche</li>
+            <li>Developing a complex project</li>
+            <li>Certification preparation</li>
+        </ul>
+    </div>
 
-Knowledge test:
+    <div class="contact-info">
+        <h2>USEFUL CONTACTS</h2>
+        
+        <h3>Mentors and consultants:</h3>
+        <ul>
+            <li><strong>Expert Name 1</strong> - email@expert1.com</li>
+            <li><strong>Expert Name 2</strong> - email@expert2.com</li>
+            <li><strong>Consultant Name</strong> - email@consultant.com</li>
+        </ul>
+        
+        <h3>Support organizations:</h3>
+        <ul>
+            <li>${subject} Center of Excellence</li>
+            <li>${context} ${subject} Institute</li>
+            <li>Foundation for ${subject}</li>
+        </ul>
+    </div>
 
-1. Define the main concept of ${subject}:
-_________________________________
-
-2. List 3 benefits of applying these principles:
-a) ____________________________
-b) ____________________________
-c) ____________________________
-
-3. Describe a practical application scenario:
-_________________________________
-_________________________________
-
-4. What are the main implementation challenges?
-_________________________________
-
-5. How will you measure your progress?
-_________________________________
-
-PRACTICAL SKILLS EVALUATION
-
-Practical exercise:
-Task: Apply learned principles in a simulated situation
-
-Evaluation criteria:
-□ Concept understanding (25%)
-□ Correct application (25%)
-□ Solution creativity (25%)
-□ Results communication (25%)
-
-Grading scale:
-- Excellent (9-10): Exceeds expectations
-- Good (7-8): Meets expectations
-- Satisfactory (5-6): Partially meets
-- Unsatisfactory (1-4): Does not meet
-
-SELF-EVALUATION
-
-Personal reflection:
-1. What did I learn that was most important?
-_________________________________
-
-2. How will I apply this knowledge?
-_________________________________
-
-3. What skills do I want to develop more?
-_________________________________
-
-4. What is my next step?
-_________________________________
-
-COURSE EVALUATION
-
-Course content:
-□ Very useful □ Useful □ Partially useful □ Not very useful
-
-Facilitator:
-□ Excellent □ Good □ Satisfactory □ Unsatisfactory
-
-Materials:
-□ Very good □ Good □ Satisfactory □ Poor
-
-Recommendations:
-□ Highly recommend
-□ Recommend
-□ Recommend with reservations
-□ Do not recommend
-
-Improvement suggestions:
-_________________________________
-_________________________________
-
-CONTINUOUS DEVELOPMENT PLAN
-
-Short-term objectives (1-3 months):
-1. ____________________________
-2. ____________________________
-3. ____________________________
-
-Long-term objectives (6-12 months):
-1. ____________________________
-2. ____________________________
-3. ____________________________
-
-Development resources:
-□ Additional books
-□ Advanced courses
-□ Mentoring
-□ Guided practice
-□ Communities of practice`;
+    <div class="resource-section">
+        <h2>UPDATES AND TRENDS</h2>
+        
+        <h3>Current information sources:</h3>
+        <ul class="checklist">
+            <li>Specialized newsletters</li>
+            <li>Annual industry reports</li>
+            <li>Recent research studies</li>
+            <li>Market analyses</li>
+        </ul>
+        
+        <h3>Emerging trends in ${subject}:</h3>
+        <ol>
+            <li>Process digitalization</li>
+            <li>Activity automation</li>
+            <li>AI and ML integration</li>
+            <li>Sustainability and responsibility</li>
+            <li>Experience personalization</li>
+        </ol>
+    </div>
+</body>
+</html>`;
   }
 }
 
-function generateResourcesContent(subject: string, level: string, audience: string, duration: string, tone: string, context: string, isRomanian: boolean): string {
-  if (isRomanian) {
-    return `RESURSE SUPLIMENTARE: ${subject}
-
-CĂRȚI RECOMANDATE
-
-Nivel începător:
-1. "Introducere în ${subject}" - Autor Principal
-   - Concepte de bază explicate simplu
-   - Exemple practice din viața reală
-   - Exerciții pas cu pas
-
-2. "${subject} pentru toți" - Expert Recunoscut
-   - Abordare accesibilă
-   - Studii de caz diverse
-   - Ghid practic de implementare
-
-Nivel intermediar:
-3. "${subject} avansat" - Specialist în domeniu
-   - Tehnici sofisticate
-   - Analize aprofundate
-   - Strategii complexe
-
-4. "Masterizarea ${subject}" - Autoritate în domeniu
-   - Perspective inovatoare
-   - Cercetări recente
-   - Aplicații avansate
-
-RESURSE ONLINE
-
-Site-uri web utile:
-• www.${subject.toLowerCase().replace(/\s+/g, '')}.org - Resurse oficiale
-• www.${context}academy.com - Cursuri online
-• www.expertsin${subject.toLowerCase().replace(/\s+/g, '')}.net - Comunitate de experți
-
-Bloguri și articole:
-• Blog-ul ${subject} - Articole săptămânale
-• Revista ${context} - Studii de caz lunare
-• Newsletter ${subject} Trends - Tendințe și noutăți
-
-Podcasturi:
-• "${subject} în practică" - Episoade săptămânale
-• "Experți în ${subject}" - Interviuri cu specialiști
-• "${context} și ${subject}" - Discuții tematice
-
-CURSURI ȘI CERTIFICĂRI
-
-Cursuri online:
-□ ${subject} Fundamentals (40 ore)
-□ Advanced ${subject} Techniques (60 ore)
-□ ${subject} for ${audience} (30 ore)
-□ ${context} ${subject} Specialization (80 ore)
-
-Certificări profesionale:
-□ Certified ${subject} Practitioner
-□ Advanced ${subject} Specialist
-□ ${subject} Master Certification
-□ ${context} ${subject} Expert
-
-COMUNITĂȚI ȘI NETWORKING
-
-Grupuri profesionale:
-• Asociația ${subject} România
-• Grupul LinkedIn "${subject} Professionals"
-• Comunitatea Facebook "${subject} în ${context}"
-
-Evenimente și conferințe:
-• Conferința Anuală ${subject}
-• Workshop-uri lunare ${subject}
-• Meetup-uri locale ${subject}
-• Webinare săptămânale
-
-INSTRUMENTE ȘI SOFTWARE
-
-Instrumente gratuite:
-□ ${subject} Calculator - Calcule rapide
-□ ${subject} Planner - Planificare proiecte
-□ ${subject} Tracker - Monitorizare progres
-
-Software profesional:
-□ ${subject} Pro Suite - Soluție completă
-□ Advanced ${subject} Tools - Instrumente avansate
-□ ${subject} Analytics - Analiză și raportare
-
-TEMPLATE-URI ȘI MODELE
-
-Documente utile:
-□ Template plan de implementare ${subject}
-□ Checklist evaluare ${subject}
-□ Model raport progres ${subject}
-□ Ghid best practices ${subject}
-
-DEZVOLTARE CONTINUĂ
-
-Plan de învățare pe 6 luni:
-Luna 1-2: Consolidarea fundamentelor
-- Recitirea materialelor cursului
-- Aplicarea în proiecte mici
-- Participarea la webinare
-
-Luna 3-4: Aprofundarea cunoștințelor
-- Citirea unei cărți avansate
-- Participarea la workshop-uri
-- Networking cu experți
-
-Luna 5-6: Specializarea
-- Alegerea unei nișe specifice
-- Dezvoltarea unui proiect complex
-- Pregătirea pentru certificare
-
-CONTACTE UTILE
-
-Mentori și consultanți:
-• Nume Expert 1 - email@expert1.com
-• Nume Expert 2 - email@expert2.com
-• Nume Consultant - email@consultant.com
-
-Organizații de sprijin:
-• Centrul de Excelență ${subject}
-• Institutul ${context} ${subject}
-• Fundația pentru ${subject}
-
-ACTUALIZĂRI ȘI TENDINȚE
-
-Surse de informații actuale:
-□ Newsletter-e specializate
-□ Rapoarte anuale din industrie
-□ Studii de cercetare recente
-□ Analize de piață
-
-Tendințe emergente în ${subject}:
-1. Digitalizarea proceselor
-2. Automatizarea activităților
-3. Integrarea AI și ML
-4. Sustenabilitatea și responsabilitatea
-5. Personalizarea experiențelor`;
-  } else {
-    return `ADDITIONAL RESOURCES: ${subject}
-
-RECOMMENDED BOOKS
-
-Beginner level:
-1. "Introduction to ${subject}" - Main Author
-   - Basic concepts explained simply
-   - Real-life practical examples
-   - Step-by-step exercises
-
-2. "${subject} for Everyone" - Recognized Expert
-   - Accessible approach
-   - Diverse case studies
-   - Practical implementation guide
-
-Intermediate level:
-3. "Advanced ${subject}" - Domain Specialist
-   - Sophisticated techniques
-   - In-depth analyses
-   - Complex strategies
-
-4. "Mastering ${subject}" - Domain Authority
-   - Innovative perspectives
-   - Recent research
-   - Advanced applications
-
-ONLINE RESOURCES
-
-Useful websites:
-• www.${subject.toLowerCase().replace(/\s+/g, '')}.org - Official resources
-• www.${context}academy.com - Online courses
-• www.expertsin${subject.toLowerCase().replace(/\s+/g, '')}.net - Expert community
-
-Blogs and articles:
-• ${subject} Blog - Weekly articles
-• ${context} Magazine - Monthly case studies
-• ${subject} Trends Newsletter - Trends and news
-
-Podcasts:
-• "${subject} in Practice" - Weekly episodes
-• "${subject} Experts" - Specialist interviews
-• "${context} and ${subject}" - Thematic discussions
-
-COURSES AND CERTIFICATIONS
-
-Online courses:
-□ ${subject} Fundamentals (40 hours)
-□ Advanced ${subject} Techniques (60 hours)
-□ ${subject} for ${audience} (30 hours)
-□ ${context} ${subject} Specialization (80 hours)
-
-Professional certifications:
-□ Certified ${subject} Practitioner
-□ Advanced ${subject} Specialist
-□ ${subject} Master Certification
-□ ${context} ${subject} Expert
-
-COMMUNITIES AND NETWORKING
-
-Professional groups:
-• ${subject} Association
-• LinkedIn Group "${subject} Professionals"
-• Facebook Community "${subject} in ${context}"
-
-Events and conferences:
-• Annual ${subject} Conference
-• Monthly ${subject} Workshops
-• Local ${subject} Meetups
-• Weekly webinars
-
-TOOLS AND SOFTWARE
-
-Free tools:
-□ ${subject} Calculator - Quick calculations
-□ ${subject} Planner - Project planning
-□ ${subject} Tracker - Progress monitoring
-
-Professional software:
-□ ${subject} Pro Suite - Complete solution
-□ Advanced ${subject} Tools - Advanced tools
-□ ${subject} Analytics - Analysis and reporting
-
-TEMPLATES AND MODELS
-
-Useful documents:
-□ ${subject} implementation plan template
-□ ${subject} evaluation checklist
-□ ${subject} progress report model
-□ ${subject} best practices guide
-
-CONTINUOUS DEVELOPMENT
-
-6-month learning plan:
-Month 1-2: Foundation consolidation
-- Re-reading course materials
-- Application in small projects
-- Webinar participation
-
-Month 3-4: Knowledge deepening
-- Reading an advanced book
-- Workshop participation
-- Expert networking
-
-Month 5-6: Specialization
-- Choosing a specific niche
-- Developing a complex project
-- Certification preparation
-
-USEFUL CONTACTS
-
-Mentors and consultants:
-• Expert Name 1 - email@expert1.com
-• Expert Name 2 - email@expert2.com
-• Consultant Name - email@consultant.com
-
-Support organizations:
-• ${subject} Center of Excellence
-• ${context} ${subject} Institute
-• Foundation for ${subject}
-
-UPDATES AND TRENDS
-
-Current information sources:
-□ Specialized newsletters
-□ Annual industry reports
-□ Recent research studies
-□ Market analyses
-
-Emerging trends in ${subject}:
-1. Process digitalization
-2. Activity automation
-3. AI and ML integration
-4. Sustainability and responsibility
-5. Experience personalization`;
-  }
-}
-
-// Helper function to create and upload file to Supabase Storage
-async function createAndUploadFile(
+// Helper function to create and upload DOCX file to Supabase Storage
+async function createAndUploadDocx(
   supabase: any,
-  content: string,
-  fileName: string,
-  format: string
+  htmlContent: string,
+  fileName: string
 ): Promise<string | null> {
   try {
-    // Create a simple text file (in a real implementation, you'd create proper DOCX/PPTX files)
-    const fileContent = new TextEncoder().encode(content);
+    console.log(`Creating DOCX file: ${fileName}`);
+    
+    // Convert HTML to DOCX using html-docx-js
+    const docxBlob = asBlob(htmlContent);
+    
+    // Convert blob to Uint8Array for Supabase Storage
+    const arrayBuffer = await docxBlob.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
     
     // Generate unique file path
     const timestamp = Date.now();
-    const filePath = `materials/${timestamp}/${fileName}.${format}`;
+    const filePath = `materials/${timestamp}/${fileName}.docx`;
     
     // Upload to Supabase Storage
     const { data, error } = await supabase.storage
       .from('course-materials')
-      .upload(filePath, fileContent, {
-        contentType: format === 'docx' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'text/plain',
+      .upload(filePath, uint8Array, {
+        contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         upsert: false
       });
 
     if (error) {
-      console.error('Error uploading file:', error);
+      console.error('Error uploading DOCX file:', error);
       return null;
     }
 
-    console.log('File uploaded successfully:', filePath);
+    console.log('DOCX file uploaded successfully:', filePath);
     return filePath;
   } catch (error) {
-    console.error('Error creating/uploading file:', error);
+    console.error('Error creating/uploading DOCX file:', error);
+    return null;
+  }
+}
+
+// Helper function to create and upload PPTX file to Supabase Storage
+async function createAndUploadPptx(
+  supabase: any,
+  slidesData: any[],
+  fileName: string,
+  metadata: any
+): Promise<string | null> {
+  try {
+    console.log(`Creating PPTX file: ${fileName}`);
+    
+    // Create new presentation
+    const pptx = new PptxGenJS();
+    
+    // Set presentation properties
+    pptx.author = 'Automator.ro';
+    pptx.company = 'Automator.ro';
+    pptx.title = metadata.subject || 'Course Presentation';
+    pptx.subject = metadata.subject || 'Generated Course';
+    
+    // Add slides
+    slidesData.forEach((slideData, index) => {
+      const slide = pptx.addSlide();
+      
+      // Add title
+      slide.addText(slideData.title, {
+        x: 0.5,
+        y: 0.5,
+        w: 9,
+        h: 1,
+        fontSize: 32,
+        bold: true,
+        color: '363636',
+        align: 'center'
+      });
+      
+      // Add content
+      if (slideData.content && slideData.content.length > 0) {
+        slideData.content.forEach((item: any, itemIndex: number) => {
+          slide.addText(item.text, {
+            x: 0.5,
+            y: 1.8 + (itemIndex * 0.6),
+            w: 9,
+            h: 0.5,
+            fontSize: item.options?.fontSize || 18,
+            bold: item.options?.bold || false,
+            color: item.options?.color || '000000',
+            align: 'left'
+          });
+        });
+      }
+      
+      // Add slide number
+      slide.addText(`${index + 1}`, {
+        x: 9.5,
+        y: 7,
+        w: 0.5,
+        h: 0.3,
+        fontSize: 12,
+        color: '666666',
+        align: 'center'
+      });
+    });
+    
+    // Generate PPTX as ArrayBuffer
+    const pptxArrayBuffer = await pptx.write({ outputType: 'arraybuffer' });
+    const uint8Array = new Uint8Array(pptxArrayBuffer);
+    
+    // Generate unique file path
+    const timestamp = Date.now();
+    const filePath = `materials/${timestamp}/${fileName}.pptx`;
+    
+    // Upload to Supabase Storage
+    const { data, error } = await supabase.storage
+      .from('course-materials')
+      .upload(filePath, uint8Array, {
+        contentType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        upsert: false
+      });
+
+    if (error) {
+      console.error('Error uploading PPTX file:', error);
+      return null;
+    }
+
+    console.log('PPTX file uploaded successfully:', filePath);
+    return filePath;
+  } catch (error) {
+    console.error('Error creating/uploading PPTX file:', error);
     return null;
   }
 }
@@ -1444,15 +2246,15 @@ Deno.serve(async (req) => {
     // Update job to processing status
     await updateJobProgress(supabase, jobId, 0, 'processing', 'Începe generarea materialelor...', 1, 'Structură + Obiective + Agendă');
 
-    // Define the 7 materials to generate
+    // Define the 7 materials to generate with proper formats
     const materialsToGenerate = [
-      { type: 'foundation', name: 'Structura si Obiectivele Cursului', format: 'docx', stepNumber: 1 },
-      { type: 'slides', name: 'Slide-uri de Prezentare', format: 'pptx', stepNumber: 2 },
-      { type: 'facilitator', name: 'Manual Facilitator', format: 'docx', stepNumber: 3 },
-      { type: 'participant', name: 'Manual Participant', format: 'docx', stepNumber: 4 },
-      { type: 'activities', name: 'Activitati si Exercitii', format: 'docx', stepNumber: 5 },
-      { type: 'evaluation', name: 'Instrumente de Evaluare', format: 'docx', stepNumber: 6 },
-      { type: 'resources', name: 'Resurse Suplimentare', format: 'docx', stepNumber: 7 },
+      { type: 'foundation', name: 'Structura si Obiectivele Cursului', format: 'docx', stepNumber: 1, isDocx: true },
+      { type: 'slides', name: 'Slide-uri de Prezentare', format: 'pptx', stepNumber: 2, isDocx: false },
+      { type: 'facilitator', name: 'Manual Facilitator', format: 'docx', stepNumber: 3, isDocx: true },
+      { type: 'participant', name: 'Manual Participant', format: 'docx', stepNumber: 4, isDocx: true },
+      { type: 'activities', name: 'Activitati si Exercitii', format: 'docx', stepNumber: 5, isDocx: true },
+      { type: 'evaluation', name: 'Instrumente de Evaluare', format: 'docx', stepNumber: 6, isDocx: true },
+      { type: 'resources', name: 'Resurse Suplimentare', format: 'docx', stepNumber: 7, isDocx: true },
     ];
 
     // Generate each material
@@ -1473,16 +2275,20 @@ Deno.serve(async (req) => {
         material.name
       );
 
-      // Generate content
-      const content = generateContent(material.type, metadata);
-      
-      // Create and upload file
-      const storagePath = await createAndUploadFile(
-        supabase,
-        content,
-        material.name,
-        material.format
-      );
+      let storagePath: string | null = null;
+      let content = '';
+
+      if (material.isDocx) {
+        // Generate HTML content and convert to DOCX
+        const htmlContent = generateHtmlContent(material.type, metadata);
+        content = htmlContent;
+        storagePath = await createAndUploadDocx(supabase, htmlContent, material.name);
+      } else {
+        // Generate PPTX slides
+        const slidesData = generatePptxSlides(metadata);
+        content = JSON.stringify(slidesData); // Store slides data as JSON for reference
+        storagePath = await createAndUploadPptx(supabase, slidesData, material.name, metadata);
+      }
 
       if (!storagePath) {
         console.error(`Failed to upload material: ${material.name}`);
