@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '@/context/language-context';
 import { useJob } from '@/context/job-context';
@@ -33,17 +33,18 @@ import {
   CardHeader, 
   CardTitle
 } from '@/components/ui/card';
-import { Loader2, FileText, AlertCircle, BookOpen, Clock, Users, Volume2 } from 'lucide-react';
+import { Loader2, FileText, AlertCircle, BookOpen, Clock, Users, Volume2, Building, GraduationCap } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import SiteHeader from '@/components/site-header';
 import SiteFooter from '@/components/site-footer';
 
-// Generate form schema - updated for new system
+// Generate form schema - updated for new system with context
 const generateSchema = z.object({
   language: z.enum(['ro', 'en', 'fr', 'de', 'es', 'it', 'pt', 'nl', 'sv', 'da']),
   subject: z.string().min(3, { message: 'Subject must be at least 3 characters' }),
+  context: z.enum(['corporate', 'academic']),
   level: z.enum(['beginner', 'intermediate', 'advanced']),
-  audience: z.enum(['students', 'professionals', 'managers']),
+  audience: z.enum(['students', 'professionals', 'managers', 'executives', 'pupils', 'teachers']),
   duration: z.enum(['30min', '1h', '2h', '4h', '8h']),
   tone: z.enum(['socratic', 'energizing', 'funny', 'professional']),
 });
@@ -72,10 +73,11 @@ export default function GeneratePage() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Default form values - Fixed: Added empty string for subject to prevent uncontrolled input warning
+  // Default form values
   const defaultValues: Partial<GenerateFormValues> = {
     language: 'ro',
-    subject: '', // Fixed: Initialize with empty string instead of undefined
+    subject: '',
+    context: 'corporate',
     level: 'intermediate',
     audience: 'professionals',
     duration: '2h',
@@ -86,6 +88,43 @@ export default function GeneratePage() {
     resolver: zodResolver(generateSchema),
     defaultValues,
   });
+
+  // Watch context to update audience options
+  const watchedContext = form.watch('context');
+
+  // Update audience when context changes
+  useEffect(() => {
+    const currentAudience = form.getValues('audience');
+    
+    if (watchedContext === 'corporate') {
+      // If current audience is not valid for corporate, reset to professionals
+      if (!['professionals', 'managers', 'executives'].includes(currentAudience)) {
+        form.setValue('audience', 'professionals');
+      }
+    } else if (watchedContext === 'academic') {
+      // If current audience is not valid for academic, reset to students
+      if (!['students', 'pupils', 'teachers'].includes(currentAudience)) {
+        form.setValue('audience', 'students');
+      }
+    }
+  }, [watchedContext, form]);
+
+  // Get audience options based on context
+  const getAudienceOptions = (context: string) => {
+    if (context === 'corporate') {
+      return [
+        { value: 'professionals', label: t('generate.form.professionals') },
+        { value: 'managers', label: t('generate.form.managers') },
+        { value: 'executives', label: t('generate.form.executives') },
+      ];
+    } else {
+      return [
+        { value: 'pupils', label: t('generate.form.pupils') },
+        { value: 'students', label: t('generate.form.students') },
+        { value: 'teachers', label: t('generate.form.teachers') },
+      ];
+    }
+  };
 
   // Check if user can generate - improved logic
   const canGenerate = !loadingSubscription && (generationsRemaining > 0);
@@ -218,6 +257,46 @@ export default function GeneratePage() {
                     )}
                   />
                   
+                  {/* Context */}
+                  <FormField
+                    control={form.control}
+                    name="context"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          <Building className="h-4 w-4" />
+                          {t('generate.form.context')}
+                        </FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
+                          disabled={isSubmitting}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder={t('generate.form.selectContext')} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="corporate">
+                              <div className="flex items-center gap-2">
+                                <Building className="h-4 w-4" />
+                                {t('generate.form.corporate')}
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="academic">
+                              <div className="flex items-center gap-2">
+                                <GraduationCap className="h-4 w-4" />
+                                {t('generate.form.academic')}
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
                   {/* Level */}
                   <FormField
                     control={form.control}
@@ -249,7 +328,7 @@ export default function GeneratePage() {
                     )}
                   />
                   
-                  {/* Target Audience */}
+                  {/* Target Audience - Dynamic based on context */}
                   <FormField
                     control={form.control}
                     name="audience"
@@ -261,7 +340,7 @@ export default function GeneratePage() {
                         </FormLabel>
                         <Select 
                           onValueChange={field.onChange} 
-                          defaultValue={field.value}
+                          value={field.value}
                           disabled={isSubmitting}
                         >
                           <FormControl>
@@ -270,11 +349,19 @@ export default function GeneratePage() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="students">{t('generate.form.students')}</SelectItem>
-                            <SelectItem value="professionals">{t('generate.form.professionals')}</SelectItem>
-                            <SelectItem value="managers">{t('generate.form.managers')}</SelectItem>
+                            {getAudienceOptions(watchedContext).map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
+                        <FormDescription>
+                          {watchedContext === 'corporate' 
+                            ? 'Pentru mediul corporativ: profesioniști, manageri, executivi'
+                            : 'Pentru mediul academic: elevi, studenți, profesori'
+                          }
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}

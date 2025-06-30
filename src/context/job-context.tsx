@@ -13,12 +13,12 @@ type MaterialInsert = Database['public']['Tables']['materials']['Insert'];
 interface GenerationParams {
   language: string;
   subject: string;
+  context: string;
   level: string;
   audience: string;
-  duration: number;
+  duration: string;
   tone: string;
-  context: string;
-  generationType: 'preview' | 'full';
+  generationType?: 'preview' | 'full';
 }
 
 interface JobContextProps {

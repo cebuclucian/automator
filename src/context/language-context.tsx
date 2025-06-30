@@ -68,7 +68,7 @@ const translations = {
     'dashboard.startGenerating': 'Începe să generezi',
     'dashboard.emptyState': 'Creează primul tău curs cu AI pentru a începe.',
     
-    // Generate - Updated for new system
+    // Generate - Updated for new system with context
     'generate.title': 'Generează curs nou',
     'generate.subtitle': 'Creează materiale complete de curs în 7 pași automatizați',
     'generate.form.title': 'Configurare curs',
@@ -77,6 +77,10 @@ const translations = {
     'generate.form.selectLanguage': 'Selectează limba',
     'generate.form.subject': 'Subiectul cursului',
     'generate.form.subjectPlaceholder': 'ex. Management de proiect, Marketing digital...',
+    'generate.form.context': 'Contextul cursului',
+    'generate.form.selectContext': 'Selectează contextul',
+    'generate.form.corporate': 'Corporativ',
+    'generate.form.academic': 'Academic',
     'generate.form.level': 'Nivelul cursului',
     'generate.form.selectLevel': 'Selectează nivelul',
     'generate.form.beginner': 'Începător',
@@ -87,6 +91,9 @@ const translations = {
     'generate.form.students': 'Studenți',
     'generate.form.professionals': 'Profesioniști',
     'generate.form.managers': 'Manageri',
+    'generate.form.executives': 'Executivi',
+    'generate.form.pupils': 'Elevi',
+    'generate.form.teachers': 'Profesori',
     'generate.form.duration': 'Durata cursului',
     'generate.form.selectDuration': 'Selectează durata',
     'generate.form.30min': '30 minute',
@@ -442,7 +449,7 @@ const translations = {
     'dashboard.startGenerating': 'Start generating',
     'dashboard.emptyState': 'Create your first AI-powered course to get started.',
     
-    // Generate - Updated for new system
+    // Generate - Updated for new system with context
     'generate.title': 'Generate New Course',
     'generate.subtitle': 'Create complete course materials in 7 automated steps',
     'generate.form.title': 'Course Configuration',
@@ -451,6 +458,10 @@ const translations = {
     'generate.form.selectLanguage': 'Select language',
     'generate.form.subject': 'Course Subject',
     'generate.form.subjectPlaceholder': 'e.g. Project Management, Digital Marketing...',
+    'generate.form.context': 'Course Context',
+    'generate.form.selectContext': 'Select context',
+    'generate.form.corporate': 'Corporate',
+    'generate.form.academic': 'Academic',
     'generate.form.level': 'Course Level',
     'generate.form.selectLevel': 'Select level',
     'generate.form.beginner': 'Beginner',
@@ -461,6 +472,9 @@ const translations = {
     'generate.form.students': 'Students',
     'generate.form.professionals': 'Professionals',
     'generate.form.managers': 'Managers',
+    'generate.form.executives': 'Executives',
+    'generate.form.pupils': 'Pupils',
+    'generate.form.teachers': 'Teachers',
     'generate.form.duration': 'Course Duration',
     'generate.form.selectDuration': 'Select duration',
     'generate.form.30min': '30 minutes',
